@@ -1,4 +1,4 @@
-# Lazy Json Pages
+# Lazy JSON Pages
 
 [![Author][ico-author]][link-author]
 [![PHP Version][ico-php]][link-php]
@@ -14,6 +14,8 @@
 
 Laravel package to load paginated items of JSON APIs into lazy collections.
 
+If you need to load heavy JSON in lazy collections, have a look at [Lazy JSON](https://github.com/cerbero90/lazy-json) instead.
+
 
 ## Install
 
@@ -25,16 +27,7 @@ composer require cerbero/lazy-json-pages
 
 ## Usage
 
-1. Create a new package by [using this template](https://github.com/cerbero90/skeleton/generate)
-1. Clone the newly created repository
-1. Run `php prefill.php`
-1. Delete `prefill.php`
-1. Review versions of PHP and Laravel to support in [composer.json](composer.json), [build.yml](.github/workflows/build.yml) and [README badges](README.md)
-1. Push changes to master
-1. Submit package to [Packagist](https://packagist.org/packages/submit)
-1. Add repository to [Scrutinizer](https://scrutinizer-ci.com/g/new)
-1. Initialize GitFlow
-1. Happy coding!
+...
 
 ## Change log
 
