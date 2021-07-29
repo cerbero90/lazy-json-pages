@@ -22,16 +22,16 @@ class Source implements IteratorAggregate
     protected $traversable;
 
     /**
-     * The source handlers.
+     * The JSON page handlers.
      *
      * @var array
      */
     protected $handlers = [
-        Handlers\TotalPagesAware::class,
-        // Handlers\TotalItemsAware::class,
-        // Handlers\ItemsPerPageAware::class,
-        // Handlers\NextPageAware::class,
-        // Handlers\NextPagesAware::class,
+        Handlers\TotalPagesHandler::class,
+        Handlers\TotalItemsHandler::class,
+        Handlers\ItemsPerPageHandler::class,
+        Handlers\NextPageHandler::class,
+        Handlers\LastPageHandler::class,
     ];
 
     /**
@@ -57,11 +57,11 @@ class Source implements IteratorAggregate
     protected function toTraversable(Map $map): Traversable
     {
         foreach ($this->handlers as $class) {
-            /** @var Handlers\Handler $handler */
-            $handler = new $class();
+            /** @var Handlers\AbstractHandler $handler */
+            $handler = new $class($map);
 
-            if ($handler->handles($map)) {
-                return $handler->handle($map);
+            if ($handler->matches()) {
+                return $handler->handle();
             }
         }
 
