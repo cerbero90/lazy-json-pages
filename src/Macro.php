@@ -2,10 +2,8 @@
 
 namespace Cerbero\LazyJsonPages;
 
-use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\LazyCollection;
-use Throwable;
 
 /**
  * The lazy collection macro.
@@ -24,11 +22,7 @@ class Macro
     public function __invoke(Response $source, string $path, $map): LazyCollection
     {
         return new LazyCollection(function () use ($source, $path, $map) {
-            try {
-                yield from new Source($source, $path, $map);
-            } catch (Throwable $e) {
-                throw new LazyJsonPagesException($e->getMessage(), 0, $e);
-            }
+            yield from new Source($source, $path, $map);
         });
     }
 }
