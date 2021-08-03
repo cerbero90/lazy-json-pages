@@ -14,27 +14,27 @@ class TotalItemsHandler extends AbstractHandler
     use HandlesTotalPages;
 
     /**
-     * Determine whether the handler can handle the JSON API map
+     * Determine whether the handler can handle the APIs configuration
      *
      * @return bool
      */
     public function matches(): bool
     {
-        return $this->map->items > 0
-            && $this->map->pages === null
-            && $this->map->perPageQuery === null;
+        return $this->config->items > 0
+            && $this->config->pages === null
+            && $this->config->perPageQuery === null;
     }
 
     /**
-     * Handle the JSON API map
+     * Handle the APIs configuration
      *
      * @return Traversable
      */
     public function handle(): Traversable
     {
-        $perPage = $this->map->perPage ?? count($this->map->source->json($this->map->path));
-        $pages = $perPage > 0 ? (int) ceil($this->map->items / $perPage) : 0;
+        $perPage = $this->config->perPage ?? count($this->config->source->json($this->config->path));
+        $pages = $perPage > 0 ? (int) ceil($this->config->items / $perPage) : 0;
 
-        return $this->handleByTotalPages($pages, $this->request->getUri());
+        yield from $this->handleByTotalPages($pages);
     }
 }

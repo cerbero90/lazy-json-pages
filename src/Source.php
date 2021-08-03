@@ -4,7 +4,6 @@ namespace Cerbero\LazyJsonPages;
 
 use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
 use Cerbero\LazyJsonPages\Handlers;
-use Illuminate\Http\Client\Response;
 use IteratorAggregate;
 use Traversable;
 
@@ -15,14 +14,14 @@ use Traversable;
 class Source implements IteratorAggregate
 {
     /**
-     * The traversable JSON.
+     * The traversable items.
      *
      * @var Traversable
      */
     protected $traversable;
 
     /**
-     * The JSON page handlers.
+     * The pagination handlers.
      *
      * @var array
      */
@@ -37,28 +36,28 @@ class Source implements IteratorAggregate
     /**
      * Instantiate the class.
      *
-     * @param Response $source
+     * @param \Psr\Http\Message\RequestInterface|\Illuminate\Http\Client\Response $source
      * @param string $path
-     * @param callable|array|string|int $map
+     * @param callable|array|string|int $config
      */
-    public function __construct(Response $source, string $path, $map)
+    public function __construct($source, string $path, $config)
     {
-        $this->traversable = $this->toTraversable(new Map($source, $path, $map));
+        $this->traversable = $this->toTraversable(new Config($source, $path, $config));
     }
 
     /**
-     * Turn the given mapped JSON into traversable items
+     * Retrieve the traversable items depending on the given configuration
      *
-     * @param Map $map
+     * @param Config $config
      * @return Traversable
      *
      * @throws LazyJsonPagesException
      */
-    protected function toTraversable(Map $map): Traversable
+    protected function toTraversable(Config $config): Traversable
     {
         foreach ($this->handlers as $class) {
             /** @var Handlers\AbstractHandler $handler */
-            $handler = new $class($map);
+            $handler = new $class($config);
 
             if ($handler->matches()) {
                 return $handler->handle();
@@ -69,7 +68,7 @@ class Source implements IteratorAggregate
     }
 
     /**
-     * Retrieve the traversable items across all pages
+     * Retrieve the traversable items
      *
      * @return Traversable
      */

@@ -2,83 +2,108 @@
 
 namespace Cerbero\LazyJsonPages\Concerns;
 
+use Cerbero\LazyJsonPages\Outcome;
+use GuzzleHttp\Client;
+use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Uri;
-use Illuminate\Http\Client\Pool;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\LazyCollection;
+use Psr\Http\Message\ResponseInterface;
+use Throwable;
 use Traversable;
 
 /**
- * The trait to handle total pages.
+ * The trait to handle APIs with the number of total pages.
  *
  */
 trait HandlesTotalPages
 {
-    use HandlesFailures;
-
     /**
-     * Handle the JSON API map by leveraging the total number of pages
+     * Handle APIs with the given number of total pages
      *
      * @param int $pages
-     * @param Uri $uri
-     * @param bool $includeSource
+     * @param Uri|null $uri
      * @return Traversable
      */
-    protected function handleByTotalPages(int $pages, Uri $uri, bool $includeSource = true): Traversable
+    protected function handleByTotalPages(int $pages, Uri $uri = null): Traversable
     {
-        $responses = $this->retry(function () use ($pages, $uri, $includeSource) {
-            return $this->fetchPagesAsynchronously($pages, $uri, $includeSource);
-        });
+        $uri = $uri ?: $this->config->source->request->getUri();
+        $firstPageAlreadyFetched = strval($uri) == strval($this->config->source->request->getUri());
+        $chunkedPages = $this->chunkPages($pages, $firstPageAlreadyFetched);
+        $items = $this->fetchItemsAsynchronously($chunkedPages, $uri);
 
-        if ($includeSource) {
-            array_unshift($responses, $this->map->source);
+        if ($firstPageAlreadyFetched) {
+            yield from $this->config->source->json($this->config->path);
         }
 
-        return $this->yieldFromResponses($responses);
+        yield from $items;
     }
 
     /**
-     * Fetch pages by calling JSON APIs asynchronously
+     * Retrieve the given pages in chunks
      *
      * @param int $pages
-     * @param Uri $uri
      * @param bool $skipFirstPage
-     * @return \Illuminate\Http\Client\Response[]
+     * @return iterable
      */
-    protected function fetchPagesAsynchronously(int $pages, Uri $uri, bool $skipFirstPage = true): array
+    protected function chunkPages(int $pages, bool $skipFirstPage): iterable
     {
-        $pages = $this->map->firstPage == 0 ? $pages - 1 : $pages;
-        $initialPage = $skipFirstPage ? $this->map->firstPage + 1 : $this->map->firstPage;
+        $firstPage = $skipFirstPage ? $this->config->firstPage + 1 : $this->config->firstPage;
+        $lastPage = $this->config->firstPage == 0 ? $pages - 1 : $pages;
 
-        return Http::pool(function (Pool $pool) use ($pages, $uri, $initialPage) {
-            $requests = [];
-
-            for ($page = $initialPage; $page <= $pages; $page++) {
-                $uri = Uri::withQueryValue($uri, $this->map->pageName, $page);
-                [$headers, $method] = [$this->request->getHeaders(), $this->request->getMethod()];
-                $requests[] = $pool->withHeaders($headers)->timeout($this->map->timeout)->send($method, $uri);
-            }
-
-            return $requests;
-        });
+        return LazyCollection::range($firstPage, $lastPage)->chunk($this->config->chunk ?: INF);
     }
 
     /**
-     * Yield items from the given responses
+     * Fetch items by performing asynchronous HTTP calls
      *
-     * @param \Illuminate\Http\Client\Response[] $responses
+     * @param iterable $chunkedPages
+     * @param Uri $uri
      * @return Traversable
      */
-    protected function yieldFromResponses(iterable $responses): Traversable
+    protected function fetchItemsAsynchronously(iterable $chunkedPages, Uri $uri): Traversable
     {
-        foreach ($responses as $response) {
-            if ($response->getBody()->tell() > 0) {
-                yield from $response->json($this->map->path);
-            } else {
-                yield from LazyCollection::fromJson($response, $this->map->path);
-            }
+        $client = new Client(['timeout' => $this->config->timeout]);
 
-            $response->close();
+        foreach ($chunkedPages as $pages) {
+            $outcome = $this->retry(function (Outcome $outcome) use ($uri, $client, $pages) {
+                $pages = $outcome->pullFailedPages() ?: $pages;
+
+                return $this->pool($client, $outcome, function () use ($uri, $pages) {
+                    $request = clone $this->config->source->request;
+
+                    foreach ($pages as $page) {
+                        yield $page => $request->withUri(Uri::withQueryValue($uri, $this->config->pageName, $page));
+                    }
+                });
+            });
+
+            yield from $outcome->pullItems();
         }
+    }
+
+    /**
+     * Retrieve the outcome of a pool of asynchronous requests
+     *
+     * @param Client $client
+     * @param Outcome $outcome
+     * @param callable $getRequests
+     * @return Outcome
+     */
+    protected function pool(Client $client, Outcome $outcome, callable $getRequests): Outcome
+    {
+        $pool = new Pool($client, $getRequests(), [
+            'concurrency' => $this->config->concurrency,
+            'fulfilled' => function (ResponseInterface $response, int $page) use ($outcome) {
+                $outcome->addItemsFromPage($page, $response, $this->config->path);
+            },
+            'rejected' => function (Throwable $e, int $page) use ($outcome) {
+                $outcome->addFailedPage($page);
+                throw $e;
+            }
+        ]);
+
+        $pool->promise()->wait();
+
+        return $outcome;
     }
 }

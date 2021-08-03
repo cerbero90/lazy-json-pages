@@ -14,22 +14,22 @@ class TotalPagesHandler extends AbstractHandler
     use HandlesTotalPages;
 
     /**
-     * Determine whether the handler can handle the JSON API map
+     * Determine whether the handler can handle the APIs configuration
      *
      * @return bool
      */
     public function matches(): bool
     {
-        return $this->map->pages > 0 && $this->map->perPageQuery === null;
+        return $this->config->pages > 0 && $this->config->perPageQuery === null;
     }
 
     /**
-     * Handle the JSON API map
+     * Handle the APIs configuration
      *
      * @return Traversable
      */
     public function handle(): Traversable
     {
-        return $this->handleByTotalPages($this->map->pages, $this->request->getUri());
+        yield from $this->handleByTotalPages($this->config->pages);
     }
 }

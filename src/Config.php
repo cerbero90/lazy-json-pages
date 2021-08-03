@@ -3,20 +3,21 @@
 namespace Cerbero\LazyJsonPages;
 
 use Cerbero\LazyJson\Concerns\EndpointAware;
-use Illuminate\Http\Client\Response;
+use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
+use Illuminate\Support\Str;
 
 /**
- * The JSON API map.
+ * The APIs configuration.
  *
  */
-class Map
+class Config
 {
     use EndpointAware;
 
     /**
-     * The initial JSON source.
+     * The source wrapper.
      *
-     * @var Response
+     * @var SourceWrapper
      */
     public $source;
 
@@ -98,6 +99,20 @@ class Map
     public $lastPage;
 
     /**
+     * The number of pages to fetch per chunk.
+     *
+     * @var int
+     */
+    public $chunk;
+
+    /**
+     * The maximum number of concurrent async HTTP requests.
+     *
+     * @var int
+     */
+    public $concurrency = 10;
+
+    /**
      * The timeout in seconds.
      *
      * @var int
@@ -121,47 +136,56 @@ class Map
     /**
      * Instantiate the class.
      *
-     * @param Response $source
+     * @param \Psr\Http\Message\RequestInterface|\Illuminate\Http\Client\Response $source
      * @param string $path
-     * @param callable|array|string|int $map
+     * @param callable|array|string|int $config
      */
-    public function __construct(Response $source, string $path, $map)
+    public function __construct($source, string $path, $config)
     {
-        $this->source = $source;
+        $this->source = new SourceWrapper($source);
         $this->path = $path;
-        $this->hydrateMap($map);
+        $this->hydrateConfig($config);
     }
 
     /**
-     * Hydrate the map
+     * Hydrate the configuration
      *
-     * @param callable|array|string|int $map
+     * @param callable|array|string|int $config
      * @return void
+     *
+     * @throws LazyJsonPagesException
      */
-    protected function hydrateMap($map): void
+    protected function hydrateConfig($config): void
     {
-        if (is_callable($map)) {
-            $map($this);
-        } elseif (is_array($map)) {
-            [$this->pageName => $value] = $map;
-            $this->pages = $this->resolveInt($value, 1);
+        if (is_callable($config)) {
+            $config($this);
+        } elseif (is_array($config)) {
+            $this->resolveConfig($config);
+        } elseif (is_string($config) || is_numeric($config)) {
+            $this->pages($config);
         } else {
-            $this->pages = $this->resolveInt($map, 1);
+            throw new LazyJsonPagesException("The provided configuration is not valid.");
         }
     }
 
     /**
-     * Retrieve an integer from the given value
+     * Resolve the given configuration
      *
-     * @param string|int $value
-     * @param int $minimum
-     * @return int
+     * @param array $config
+     * @return void
+     *
+     * @throws LazyJsonPagesException
      */
-    protected function resolveInt($value, int $minimum): int
+    protected function resolveConfig(array $config): void
     {
-        $raw = is_numeric($value) ? $value : $this->source->json($value);
-
-        return (int) max($raw, $minimum);
+        foreach ($config as $key => $value) {
+            if (method_exists($this, $method = Str::camel($key))) {
+                $values = is_array($value) ? $value : [$value];
+                call_user_func_array([$this, $method], $values);
+            } else {
+                throw new LazyJsonPagesException("The key [{$key}] is not valid.");
+            }
+        }
     }
 
     /**
@@ -204,6 +228,36 @@ class Map
     }
 
     /**
+     * Retrieve an integer from the given value
+     *
+     * @param string|int $value
+     * @param int $minimum
+     * @return int
+     */
+    protected function resolveInt($value, int $minimum): int
+    {
+        return (int) max($minimum, $this->resolvePage($value));
+    }
+
+    /**
+     * Retrieve the page value from the given presumed URL
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    protected function resolvePage($value)
+    {
+        if (is_numeric($value)) {
+            return (int) $value;
+        } elseif ($this->isEndpoint($value = $this->source->json($value))) {
+            parse_str(parse_url($value, PHP_URL_QUERY), $query);
+            $value = $query[$this->pageName];
+        }
+
+        return is_numeric($value) ? (int) $value : $value;
+    }
+
+    /**
      * Set the total number of items
      *
      * @param string|int $items
@@ -226,9 +280,9 @@ class Map
      */
     public function perPage(int $perPage, string $query = null, int $firstPageItems = 1): self
     {
-        $this->perPage = $query ? $firstPageItems : $perPage;
+        $this->perPage = max(1, $query ? $firstPageItems : $perPage);
         $this->perPageQuery = $query;
-        $this->perPageOverride = $query ? $perPage : null;
+        $this->perPageOverride = $query ? max(1, $perPage) : null;
 
         return $this;
     }
@@ -242,25 +296,9 @@ class Map
     public function nextPage(string $key): self
     {
         $this->nextPageKey = $key;
-        $this->nextPage = $this->resolvePage($this->source->json($key));
+        $this->nextPage = $this->resolvePage($key);
 
         return $this;
-    }
-
-    /**
-     * Retrieve the page value from the given presumed URL
-     *
-     * @param mixed $value
-     * @return mixed
-     */
-    protected function resolvePage($value)
-    {
-        if ($this->isEndpoint($value)) {
-            parse_str(parse_url($value, PHP_URL_QUERY), $query);
-            $value = $query[$this->pageName];
-        }
-
-        return is_numeric($value) ? intval($value) : $value;
     }
 
     /**
@@ -271,9 +309,43 @@ class Map
      */
     public function lastPage($page): self
     {
-        $raw = is_numeric($page) ? $page : $this->source->json($page);
+        $this->lastPage = $this->resolvePage($page);
 
-        $this->lastPage = $this->resolvePage($raw);
+        return $this;
+    }
+
+    /**
+     * Fetch pages synchronously
+     *
+     * @return self
+     */
+    public function sync(): self
+    {
+        return $this->chunk(1);
+    }
+
+    /**
+     * Set the number of pages to fetch per chunk
+     *
+     * @param int $size
+     * @return self
+     */
+    public function chunk(int $size): self
+    {
+        $this->chunk = max(1, $size);
+
+        return $this;
+    }
+
+    /**
+     * Set the maximum number of concurrent async HTTP requests
+     *
+     * @param int $max
+     * @return self
+     */
+    public function concurrency(int $max): self
+    {
+        $this->concurrency = max(0, $max);
 
         return $this;
     }
@@ -286,7 +358,7 @@ class Map
      */
     public function timeout(int $seconds): self
     {
-        $this->timeout = $seconds;
+        $this->timeout = max(0, $seconds);
 
         return $this;
     }
@@ -299,7 +371,7 @@ class Map
      */
     public function attempts(int $times): self
     {
-        $this->attempts = $times;
+        $this->attempts = max(1, $times);
 
         return $this;
     }

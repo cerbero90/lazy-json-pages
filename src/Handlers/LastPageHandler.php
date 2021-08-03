@@ -14,24 +14,24 @@ class LastPageHandler extends AbstractHandler
     use HandlesTotalPages;
 
     /**
-     * Determine whether the handler can handle the JSON API map
+     * Determine whether the handler can handle the APIs configuration
      *
      * @return bool
      */
     public function matches(): bool
     {
-        return $this->map->lastPage > 0 && $this->map->perPageQuery === null;
+        return $this->config->lastPage > 0 && $this->config->perPageQuery === null;
     }
 
     /**
-     * Handle the JSON API map
+     * Handle the APIs configuration
      *
      * @return Traversable
      */
     public function handle(): Traversable
     {
-        $pages = $this->map->firstPage == 0 ? $this->map->lastPage + 1 : $this->map->lastPage;
+        $pages = $this->config->firstPage == 0 ? $this->config->lastPage + 1 : $this->config->lastPage;
 
-        return $this->handleByTotalPages($pages, $this->request->getUri());
+        yield from $this->handleByTotalPages($pages);
     }
 }

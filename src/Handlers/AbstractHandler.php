@@ -2,7 +2,8 @@
 
 namespace Cerbero\LazyJsonPages\Handlers;
 
-use Cerbero\LazyJsonPages\Map;
+use Cerbero\LazyJsonPages\Concerns\RetriesHttpRequests;
+use Cerbero\LazyJsonPages\Config;
 use Traversable;
 
 /**
@@ -11,40 +12,34 @@ use Traversable;
  */
 abstract class AbstractHandler
 {
-    /**
-     * The JSON API map.
-     *
-     * @var Map
-     */
-    protected $map;
+    use RetriesHttpRequests;
 
     /**
-     * The HTTP request.
+     * The APIs configuration.
      *
-     * @var \GuzzleHttp\Psr7\Request
+     * @var Config
      */
-    protected $request;
+    protected $config;
 
     /**
      * Instantiate the class.
      *
-     * @param Map $map
+     * @param Config $config
      */
-    public function __construct(Map $map)
+    public function __construct(Config $config)
     {
-        $this->map = $map;
-        $this->request = $map->source->transferStats->getRequest();
+        $this->config = $config;
     }
 
     /**
-     * Determine whether the handler can handle the JSON API map
+     * Determine whether the handler can handle the APIs configuration
      *
      * @return bool
      */
     abstract public function matches(): bool;
 
     /**
-     * Handle the JSON API map
+     * Handle the APIs configuration
      *
      * @return Traversable
      */

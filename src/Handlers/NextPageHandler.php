@@ -2,9 +2,10 @@
 
 namespace Cerbero\LazyJsonPages\Handlers;
 
-use Cerbero\LazyJsonPages\Concerns\HandlesFailures;
+use Cerbero\LazyJsonPages\Outcome;
+use Cerbero\LazyJsonPages\SourceWrapper;
 use GuzzleHttp\Psr7\Uri;
-use Illuminate\Support\Facades\Http;
+use Throwable;
 use Traversable;
 
 /**
@@ -13,38 +14,49 @@ use Traversable;
  */
 class NextPageHandler extends AbstractHandler
 {
-    use HandlesFailures;
-
     /**
-     * Determine whether the handler can handle the JSON API map
+     * Determine whether the handler can handle the APIs configuration
      *
      * @return bool
      */
     public function matches(): bool
     {
-        return !!$this->map->nextPageKey;
+        return !!$this->config->nextPageKey;
     }
 
     /**
-     * Handle the JSON API map
+     * Handle the APIs configuration
      *
      * @return Traversable
      */
     public function handle(): Traversable
     {
-        yield from $this->map->source->json($this->map->path);
+        yield from $this->retry(function (Outcome $outcome) {
+            try {
+                yield from $this->handleByNextPage();
+            } catch (Throwable $e) {
+                $outcome->addFailedPage($this->config->nextPage);
+                throw $e;
+            }
+        });
+    }
 
-        while ($this->map->nextPage) {
-            [$headers, $method] = [$this->request->getHeaders(), $this->request->getMethod()];
-            $uri = Uri::withQueryValue($this->request->getUri(), $this->map->pageName, $this->map->nextPage);
+    /**
+     * Handle APIs with next page
+     *
+     * @return Traversable
+     */
+    protected function handleByNextPage(): Traversable
+    {
+        $request = clone $this->config->source->request;
 
-            $this->map->source = $this->retry(function () use ($headers, $method, $uri) {
-                return Http::withHeaders($headers)->timeout($this->map->timeout)->send($method, $uri);
-            });
+        yield from $this->config->source->json($this->config->path);
 
-            $this->map->nextPage($this->map->nextPageKey);
-
-            yield from $this->handle();
+        while ($this->config->nextPage) {
+            $uri = Uri::withQueryValue($request->getUri(), $this->config->pageName, $this->config->nextPage);
+            $this->config->source = new SourceWrapper($request->withUri($uri));
+            $this->config->nextPage($this->config->nextPageKey);
+            yield from $this->handleByNextPage();
         }
     }
 }
