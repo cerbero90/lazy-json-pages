@@ -1,4 +1,4 @@
-# Lazy JSON Pages
+# 🐼 Lazy JSON Pages
 
 [![Author][ico-author]][link-author]
 [![PHP Version][ico-php]][link-php]
@@ -9,12 +9,13 @@
 [![Quality Score][ico-code-quality]][link-code-quality]
 [![Latest Version][ico-version]][link-packagist]
 [![Software License][ico-license]](LICENSE.md)
+[![PSR-7][ico-psr7]][link-psr7]
 [![PSR-12][ico-psr12]][link-psr12]
 [![Total Downloads][ico-downloads]][link-downloads]
 
-Laravel package to load paginated items of JSON APIs into lazy collections.
+Framework agnostic package to load paginated items of JSON APIs into [Laravel lazy collections](https://laravel.com/docs/collections#lazy-collections).
 
-If you need to load heavy JSON in lazy collections, have a look at [Lazy JSON](https://github.com/cerbero90/lazy-json) instead.
+Need to load heavy JSON with no pagination? Consider using [Lazy JSON](https://github.com/cerbero90/lazy-json) instead.
 
 
 ## Install
@@ -58,11 +59,12 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 
 [ico-author]: https://img.shields.io/static/v1?label=author&message=cerbero90&color=50ABF1&logo=twitter&style=flat-square
 [ico-php]: https://img.shields.io/packagist/php-v/cerbero/lazy-json-pages?color=%234F5B93&logo=php&style=flat-square
-[ico-laravel]: https://img.shields.io/static/v1?label=laravel&message=%E2%89%A58.37&color=ff2d20&logo=laravel&style=flat-square
+[ico-laravel]: https://img.shields.io/static/v1?label=laravel&message=%E2%89%A56.0&color=ff2d20&logo=laravel&style=flat-square
 [ico-octane]: https://img.shields.io/static/v1?label=octane&message=compatible&color=ff2d20&logo=laravel&style=flat-square
 [ico-version]: https://img.shields.io/packagist/v/cerbero/lazy-json-pages.svg?label=version&style=flat-square
 [ico-actions]: https://img.shields.io/github/workflow/status/cerbero90/lazy-json-pages/build?style=flat-square&logo=github
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
+[ico-psr7]: https://img.shields.io/static/v1?label=compliance&message=PSR-7&color=blue&style=flat-square
 [ico-psr12]: https://img.shields.io/static/v1?label=compliance&message=PSR-12&color=blue&style=flat-square
 [ico-scrutinizer]: https://img.shields.io/scrutinizer/coverage/g/cerbero90/lazy-json-pages.svg?style=flat-square&logo=scrutinizer
 [ico-code-quality]: https://img.shields.io/scrutinizer/g/cerbero90/lazy-json-pages.svg?style=flat-square&logo=scrutinizer
@@ -74,6 +76,7 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 [link-octane]: https://github.com/laravel/octane
 [link-packagist]: https://packagist.org/packages/cerbero/lazy-json-pages
 [link-actions]: https://github.com/cerbero90/lazy-json-pages/actions?query=workflow%3Abuild
+[link-psr7]: https://www.php-fig.org/psr/psr-7/
 [link-psr12]: https://www.php-fig.org/psr/psr-12/
 [link-scrutinizer]: https://scrutinizer-ci.com/g/cerbero90/lazy-json-pages/code-structure
 [link-code-quality]: https://scrutinizer-ci.com/g/cerbero90/lazy-json-pages
