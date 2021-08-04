@@ -218,6 +218,12 @@ $config->chunk(3);
 
 The configuration above fetches 3 pages concurrently, loads the paginated items into a lazy collection and proceeds with the next 3 pages. Chunking benefits memory usage at the expense of speed, no chunking is set by default but it is recommended when dealing with a lot of data.
 
+To minimize the memory usage Lazy JSON Pages can fetch pages synchronously, i.e. one by one, beware that this is also the slowest solution:
+
+```php
+$config->sync();
+```
+
 We can also set how many HTTP requests we want to send concurrently. By default 10 pages are fetched asynchronously:
 
 ```php
