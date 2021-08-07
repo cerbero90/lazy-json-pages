@@ -164,7 +164,7 @@ class Config
         } elseif (is_string($config) || is_numeric($config)) {
             $this->pages($config);
         } else {
-            throw new LazyJsonPagesException("The provided configuration is not valid.");
+            throw new LazyJsonPagesException('The provided configuration is not valid.');
         }
     }
 
