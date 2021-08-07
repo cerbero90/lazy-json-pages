@@ -7,6 +7,9 @@ use Cerbero\LazyJsonPages\Exceptions\OutOfAttemptsException;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\RejectedPromise;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\LazyCollection;
 use Mockery;
@@ -309,9 +312,6 @@ class LazyJsonPagesTest extends TestCase
      */
     public function handles_failures()
     {
-        $this->expectException(OutOfAttemptsException::class);
-        $this->expectExceptionMessage('foo');
-
         $source = new Request('GET', 'https://paginated-json-api.test');
         $client = Mockery::mock('overload:' . Client::class, ClientInterface::class);
 
@@ -321,10 +321,25 @@ class LazyJsonPagesTest extends TestCase
             ->withArgs(function (Request $request) {
                 return $request->getUri() == 'https://paginated-json-api.test?page=2';
             })
-            ->andThrow(new Exception('foo'));
+            ->andReturn($this->promiseFixture('page2'));
 
-        lazyJsonPages($source, 'data.results', 'meta.pagination.total_pages')->each(function () {
-            //
-        });
+        $client->shouldReceive('sendAsync')
+            ->withArgs(function (Request $request) {
+                return $request->getUri() == 'https://paginated-json-api.test?page=3';
+            })
+            ->andReturn(new Promise(function () {
+                throw new Exception('foo');
+            }));
+
+        try {
+            lazyJsonPages($source, 'data.results', 'meta.pagination.total_pages')->each(function () {
+                //
+            });
+        } catch (Throwable $e) {
+            $this->assertInstanceOf(OutOfAttemptsException::class, $e);
+            $this->assertSame('foo', $e->getMessage());
+            $this->assertSame([3], $e->failedPages);
+            $this->assertSame(5, $e->items->count());
+        }
     }
 }
