@@ -62,6 +62,10 @@ class SourceWrapperTest extends TestCase
      */
     public function sets_response_and_request_from_a_laravel_http_client_response()
     {
+        if (!class_exists(Response::class)) {
+            $this->markTestSkipped('The Laravel HTTP client response class is required for this test.');
+        }
+
         $response = $this->fixture('page1');
         $source = new Response($response);
         $request = new Request('GET', 'https://paginated-json-api.test');
@@ -79,6 +83,10 @@ class SourceWrapperTest extends TestCase
      */
     public function fails_if_laravel_response_does_not_have_transfer_stats()
     {
+        if (!class_exists(Response::class)) {
+            $this->markTestSkipped('The Laravel HTTP client response class is required for this test.');
+        }
+
         $this->expectException(LazyJsonPagesException::class);
         $this->expectExceptionMessage('The HTTP client response is not aware of the original request.');
 
