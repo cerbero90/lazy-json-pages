@@ -323,7 +323,7 @@ class LazyJsonPagesTest extends TestCase
             })
             ->andThrow(new Exception('foo'));
 
-        lazyJsonPages($source, 'data.results', 'total_pages')->each(function () {
+        lazyJsonPages($source, 'data.results', 'meta.pagination.total_pages')->each(function () {
             //
         });
     }
