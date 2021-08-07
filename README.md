@@ -40,6 +40,7 @@ LazyCollection::macro('fromJsonPages', new Macro());
 - [Length-aware paginations](#length-aware-paginations)
 - [Cursor and next-page paginations](#cursor-and-next-page-paginations)
 - [Fine-tuning the pages fetching process](#fine-tuning-the-pages-fetching-process)
+- [Handling errors](#handling-errors)
 
 Loading paginated items of JSON APIs into a lazy collection is possible by calling the collection itself or the included helper:
 
@@ -78,7 +79,7 @@ The second argument, `$path`, is the key within JSON APIs holding the paginated 
 }
 ```
 
-the path to the paginated items would be `data.results`.
+the path to the paginated items would be `data.results`. All nested JSON keys can be defined with dot-notation, including the keys to set in the configuration.
 
 APIs are all different so Lazy JSON Pages allows us to define tailored configurations for each of them. The configuration can be set with the following variants:
 
@@ -271,6 +272,28 @@ $items
     ->filter(fn (array $item) => $this->isValid($item))
     ->map(fn (array $item) => $this->transform($item))
     ->each(fn (array $item) => $this->save($item));
+```
+
+
+### Handling errors
+
+As seen above, we can mitigate potentially faulty HTTP requests with backoffs, timeouts and retries. When we reach the maximum number of attempts and a request keeps failing, an `OutOfAttemptsException` is thrown.
+
+When caught, this exception provides information about what went wrong, including the actual exception that was thrown, the pages that failed to be fetched and the paginated items that were loaded before the failure happened:
+
+```php
+use Cerbero\LazyJsonPages\Exceptions\OutOfAttemptsException;
+
+try {
+    $items = lazyJsonPages($source, $path, $config);
+} catch (OutOfAttemptsException $e) {
+    // the actual exception that was thrown
+    $e->original;
+    // the pages that failed to be fetched
+    $e->failedPages;
+    // a LazyCollection with items loaded before the error
+    $e->items;
+}
 ```
 
 
