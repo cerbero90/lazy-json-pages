@@ -8,8 +8,6 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\Promise;
-use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\RejectedPromise;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\LazyCollection;
 use Mockery;
@@ -341,5 +339,39 @@ class LazyJsonPagesTest extends TestCase
             $this->assertSame([3], $e->failedPages);
             $this->assertSame(5, $e->items->count());
         }
+    }
+
+    /**
+     * @test
+     */
+    public function handles_next_page_failures()
+    {
+        $this->expectExceptionObject(new Exception('foo'));
+
+        $config = ['next_page' => 'meta.pagination.next_page'];
+        $source = new Request('GET', 'https://paginated-json-api.test');
+        $client = Mockery::mock('overload:' . Client::class, ClientInterface::class);
+
+        $client->shouldReceive('send')
+            ->withArgs(function (Request $request) {
+                return $request->getUri() == 'https://paginated-json-api.test';
+            })
+            ->andReturn($this->fixture('page1'));
+
+        $client->shouldReceive('send')
+            ->withArgs(function (Request $request) {
+                return $request->getUri() == 'https://paginated-json-api.test?page=2';
+            })
+            ->andReturn($this->fixture('page2'));
+
+        $client->shouldReceive('send')
+            ->withArgs(function (Request $request) {
+                return $request->getUri() == 'https://paginated-json-api.test?page=3';
+            })
+            ->andThrow(new Exception('foo'));
+
+        lazyJsonPages($source, 'data.results', $config)->each(function () {
+            //
+        });
     }
 }
