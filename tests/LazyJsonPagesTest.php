@@ -309,6 +309,9 @@ class LazyJsonPagesTest extends TestCase
      */
     public function handles_failures()
     {
+        $this->expectException(OutOfAttemptsException::class);
+        $this->expectExceptionMessage('foo');
+
         $source = new Request('GET', 'https://paginated-json-api.test');
         $client = Mockery::mock('overload:' . Client::class, ClientInterface::class);
 
@@ -318,18 +321,10 @@ class LazyJsonPagesTest extends TestCase
             ->withArgs(function (Request $request) {
                 return $request->getUri() == 'https://paginated-json-api.test?page=2';
             })
-            ->andThrow($originalException = new Exception('foo'));
+            ->andThrow(new Exception('foo'));
 
-        try {
-            lazyJsonPages($source, 'data.results', 'total_pages')->each(function () {
-                //
-            });
-
-            $this->fail('An exception was expected to be thrown but it was not.');
-        } catch (Throwable $e) {
-            $this->assertInstanceOf(OutOfAttemptsException::class, $e);
-            $this->assertSame('foo', $e->getMessage());
-            $this->assertSame($originalException, $e->original);
-        }
+        lazyJsonPages($source, 'data.results', 'total_pages')->each(function () {
+            //
+        });
     }
 }
