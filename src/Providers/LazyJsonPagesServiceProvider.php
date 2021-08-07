@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 /**
  * The service provider.
  *
+ * @codeCoverageIgnore
  */
 class LazyJsonPagesServiceProvider extends ServiceProvider
 {
