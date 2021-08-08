@@ -346,8 +346,6 @@ class LazyJsonPagesTest extends TestCase
      */
     public function handles_next_page_failures()
     {
-        $this->expectExceptionObject(new Exception('foo'));
-
         $config = ['next_page' => 'meta.pagination.next_page'];
         $source = new Request('GET', 'https://paginated-json-api.test');
         $client = Mockery::mock('overload:' . Client::class, ClientInterface::class);
@@ -370,8 +368,15 @@ class LazyJsonPagesTest extends TestCase
             })
             ->andThrow(new Exception('foo'));
 
-        lazyJsonPages($source, 'data.results', $config)->each(function () {
-            //
-        });
+        try {
+            lazyJsonPages($source, 'data.results', $config)->each(function () {
+                //
+            });
+        } catch (Throwable $e) {
+            $this->assertInstanceOf(OutOfAttemptsException::class, $e);
+            $this->assertSame('foo', $e->getMessage());
+            $this->assertSame([3], $e->failedPages);
+            $this->assertSame(0, $e->items->count());
+        }
     }
 }

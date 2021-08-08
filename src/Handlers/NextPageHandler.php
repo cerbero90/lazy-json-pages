@@ -31,10 +31,11 @@ class NextPageHandler extends AbstractHandler
      */
     public function handle(): Traversable
     {
-        yield from $this->retry(function (Outcome $outcome) {
+        yield from $this->retryYielding(function (Outcome $outcome) {
             try {
                 yield from $this->handleByNextPage();
             } catch (Throwable $e) {
+                $outcome->pullFailedPages();
                 $outcome->addFailedPage($this->config->nextPage);
                 throw $e;
             }
