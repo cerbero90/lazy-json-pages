@@ -1,0 +1,30 @@
+{
+    "data": {
+        "results": [
+            {
+                "id": 6
+            },
+            {
+                "id": 7
+            },
+            {
+                "id": 8
+            },
+            {
+                "id": 9
+            },
+            {
+                "id": 10
+            }
+        ]
+    },
+    "meta": {
+        "pagination": {
+            "total_pages": 3,
+            "total_items": 13,
+            "last_page": 3,
+            "next_page": 3,
+            "next_page_url": "https://paginated-json-api.test?page=3"
+        }
+    }
+}

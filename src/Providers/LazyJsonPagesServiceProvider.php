@@ -2,24 +2,17 @@
 
 namespace Cerbero\LazyJsonPages\Providers;
 
+use Cerbero\LazyJsonPages\Macro;
+use Illuminate\Support\LazyCollection;
 use Illuminate\Support\ServiceProvider;
 
 /**
  * The service provider.
  *
+ * @codeCoverageIgnore
  */
 class LazyJsonPagesServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     *
-     * @return void
-     */
-    public function register()
-    {
-        //
-    }
-
     /**
      * Execute logic after the service provider is booted.
      *
@@ -27,6 +20,6 @@ class LazyJsonPagesServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        LazyCollection::macro('fromJsonPages', new Macro());
     }
 }
