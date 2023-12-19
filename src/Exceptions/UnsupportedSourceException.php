@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Exceptions;
 
-final class UnsupportedSourceException extends LazyJsonPagesException
+class UnsupportedSourceException extends LazyJsonPagesException
 {
     /**
      * @param mixed $source
