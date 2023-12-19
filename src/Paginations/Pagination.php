@@ -12,7 +12,7 @@ use Traversable;
 /**
  * @implements IteratorAggregate<string|int, mixed>
  */
-class pagination implements IteratorAggregate
+abstract class Pagination implements IteratorAggregate
 {
     public final function __construct(
         protected readonly AnySource $source,
