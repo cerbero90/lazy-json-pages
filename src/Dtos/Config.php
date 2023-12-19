@@ -22,6 +22,5 @@ final class Config
         public readonly int $concurrency,
         public readonly int $timeout,
         public readonly int $attempts,
-    ) {
-    }
+    ) {}
 }

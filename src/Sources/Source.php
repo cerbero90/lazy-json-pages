@@ -8,10 +8,9 @@ use Psr\Http\Message\RequestInterface;
 
 abstract class Source
 {
-    public final function __construct(
+    final public function __construct(
         protected readonly mixed $source,
-    ) {
-    }
+    ) {}
 
     abstract public function matches(): bool;
 

@@ -42,8 +42,7 @@ final class LazyJsonPages implements IteratorAggregate
     private function __construct(
         private readonly AnySource $source,
         private readonly Config $config,
-    ) {
-    }
+    ) {}
 
     /**
      * Retrieve the paginated items lazily.

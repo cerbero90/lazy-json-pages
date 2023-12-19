@@ -109,9 +109,7 @@ final class ConfigFactory
      */
     private $backoff;
 
-    public function __construct(private AnySource $source)
-    {
-    }
+    public function __construct(private AnySource $source) {}
 
     /**
      * Set the dot-notation path to extract items from

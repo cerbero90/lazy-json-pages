@@ -7,7 +7,6 @@ namespace Cerbero\LazyJsonPages\Sources;
 use Cerbero\LazyJsonPages\Exceptions\UnsupportedSourceException;
 use Generator;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 class AnySource extends Source
 {

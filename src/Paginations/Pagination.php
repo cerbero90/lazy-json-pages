@@ -14,11 +14,10 @@ use Traversable;
  */
 abstract class Pagination implements IteratorAggregate
 {
-    public final function __construct(
+    final public function __construct(
         protected readonly AnySource $source,
         protected readonly Config $config,
-    ) {
-    }
+    ) {}
 
     /**
      * @return Traversable<string|int, mixed>
