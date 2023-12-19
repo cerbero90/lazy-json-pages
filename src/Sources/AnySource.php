@@ -6,9 +6,10 @@ namespace Cerbero\LazyJsonPages\Sources;
 
 use Cerbero\LazyJsonPages\Exceptions\UnsupportedSourceException;
 use Generator;
-use Traversable;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
-class AnySource implements Source
+class AnySource extends Source
 {
     /**
      * @var class-string<Source>[]
@@ -16,32 +17,34 @@ class AnySource implements Source
     protected array $supportedSources = [
         CustomSource::class,
         Endpoint::class,
+        LaravelClientRequest::class,
         LaravelClientResponse::class,
+        LaravelRequest::class,
         Psr7Request::class,
+        SymfonyRequest::class,
     ];
 
     /**
      * The matching source.
-     *
-     * @var Source|null
      */
     protected ?Source $matchingSource;
 
     /**
-     * Retrieve the JSON fragments
-     *
-     * @return Traversable<int, string>
-     * @throws UnsupportedSourceException
+     * Determine whether the JSON source can be handled
      */
-    public function getIterator(): Traversable
+    public function matches(): bool
     {
-        return $this->matchingSource();
+        return true;
+    }
+
+    public function request(): RequestInterface
+    {
+        return $this->matchingSource()->request();
     }
 
     /**
      * Retrieve the matching source
      *
-     * @return Source
      * @throws UnsupportedSourceException
      */
     protected function matchingSource(): Source
@@ -67,27 +70,12 @@ class AnySource implements Source
     protected function sources(): Generator
     {
         foreach ($this->supportedSources as $source) {
-            yield new $source($this->source, $this->config);
+            yield new $source($this->source);
         }
     }
 
-    /**
-     * Determine whether the JSON source can be handled
-     *
-     * @return bool
-     */
-    public function matches(): bool
+    public function response(?string $key = null): mixed
     {
-        return true;
-    }
-
-    /**
-     * Retrieve the calculated size of the JSON source
-     *
-     * @return int|null
-     */
-    protected function calculateSize(): ?int
-    {
-        return $this->matchingSource()->size();
+        return $this->matchingSource()->response($key);
     }
 }
