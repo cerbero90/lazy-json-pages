@@ -16,11 +16,15 @@ use Throwable;
 use Traversable;
 
 /**
+ * The Lazy JSON Pages entry-point.
+ *
  * @implements IteratorAggregate<string|int, mixed>
  */
 final class LazyJsonPages implements IteratorAggregate
 {
     /**
+     * Instantiate the class statically.
+     *
      * @param Closure(ConfigFactory): void $configure
      * @return LazyCollection<string|int, mixed>
      */
@@ -32,6 +36,9 @@ final class LazyJsonPages implements IteratorAggregate
         return new LazyCollection(fn() => yield from new self($source, $config->make()));
     }
 
+    /**
+     * Instantiate the class.
+     */
     private function __construct(
         private readonly AnySource $source,
         private readonly Config $config,
@@ -39,6 +46,8 @@ final class LazyJsonPages implements IteratorAggregate
     }
 
     /**
+     * Retrieve the paginated items lazily.
+     *
      * @return Traversable<string|int, mixed>
      */
     public function getIterator(): Traversable
