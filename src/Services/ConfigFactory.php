@@ -1,198 +1,127 @@
 <?php
 
-namespace Cerbero\LazyJsonPages;
+declare(strict_types=1);
 
-use Cerbero\LazyJson\Concerns\EndpointAware;
-use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
-use Illuminate\Support\Str;
+namespace Cerbero\LazyJsonPages\Services;
 
-/**
- * The APIs configuration.
- *
- */
-class Config
+use Cerbero\LazyJsonPages\Dtos\Config;
+use Cerbero\LazyJsonPages\Sources\AnySource;
+use Closure;
+
+final class ConfigFactory
 {
-    use EndpointAware;
-
     /**
-     * The source wrapper.
-     *
-     * @var SourceWrapper
+     * The dot to extract items from.
      */
-    public $source;
-
-    /**
-     * The path to extract items from.
-     *
-     * @var string
-     */
-    public $path;
+    private string $dot = '*';
 
     /**
      * The name of the page.
-     *
-     * @var string
      */
-    public $pageName = 'page';
+    private string $pageName = 'page';
 
     /**
      * The number of the first page.
-     *
-     * @var int
      */
-    public $firstPage = 1;
+    private int $firstPage = 1;
 
     /**
      * The total number of pages.
-     *
-     * @var int
      */
-    public $pages;
+    private ?int $totalPages = null;
 
     /**
      * The total number of items.
-     *
-     * @var int
      */
-    public $items;
+    private ?int $totalItems = null;
 
     /**
      * The number of items per page.
-     *
-     * @var int
      */
-    public $perPage;
+    private ?int $perPage = null;
 
     /**
-     * The query parameter holding the number of items per page.
-     *
-     * @var string
+     * The key holding the number of items per page.
      */
-    public $perPageQuery;
+    private ?string $perPageKey = null;
 
     /**
      * The new number of items per page.
-     *
-     * @var int
      */
-    public $perPageOverride;
+    private int $perPageOverride;
 
     /**
      * The next page of a simple or cursor pagination.
      *
      * @var string|int
      */
-    public $nextPage;
+    private $nextPage;
 
     /**
      * The key holding the next page.
      *
      * @var string
      */
-    public $nextPageKey;
+    private $nextPageKey;
 
     /**
      * The number of the last page.
      *
      * @var int
      */
-    public $lastPage;
+    private $lastPage;
 
     /**
      * The number of pages to fetch per chunk.
      *
      * @var int
      */
-    public $chunk;
+    private $chunk;
 
     /**
      * The maximum number of concurrent async HTTP requests.
      *
      * @var int
      */
-    public $concurrency = 10;
+    private $concurrency = 10;
 
     /**
      * The timeout in seconds.
      *
      * @var int
      */
-    public $timeout = 5;
+    private $timeout = 5;
 
     /**
      * The number of attempts to fetch pages.
      *
      * @var int
      */
-    public $attempts = 3;
+    private $attempts = 3;
 
     /**
      * The backoff strategy.
      *
      * @var callable
      */
-    public $backoff;
+    private $backoff;
 
-    /**
-     * Instantiate the class.
-     *
-     * @param \Psr\Http\Message\RequestInterface|\Illuminate\Http\Client\Response $source
-     * @param string $path
-     * @param callable|array|string|int $config
-     */
-    public function __construct($source, string $path, $config)
+    public function __construct(private AnySource $source)
     {
-        $this->source = new SourceWrapper($source);
-        $this->path = $path;
-        $this->hydrateConfig($config);
     }
 
     /**
-     * Hydrate the configuration
-     *
-     * @param callable|array|string|int $config
-     * @return void
-     *
-     * @throws LazyJsonPagesException
+     * Set the dot-notation path to extract items from
      */
-    protected function hydrateConfig($config): void
+    public function dot(string $dot): self
     {
-        if (is_callable($config)) {
-            $config($this);
-        } elseif (is_array($config)) {
-            $this->resolveConfig($config);
-        } elseif (is_string($config) || is_numeric($config)) {
-            $this->pages($config);
-        } else {
-            throw new LazyJsonPagesException('The provided configuration is not valid.');
-        }
+        $this->dot = $dot;
+
+        return $this;
     }
 
     /**
-     * Resolve the given configuration
-     *
-     * @param array $config
-     * @return void
-     *
-     * @throws LazyJsonPagesException
-     */
-    protected function resolveConfig(array $config): void
-    {
-        foreach ($config as $key => $value) {
-            if (method_exists($this, $method = Str::camel($key))) {
-                $values = is_array($value) ? $value : [$value];
-                call_user_func_array([$this, $method], $values);
-            } else {
-                throw new LazyJsonPagesException("The key [{$key}] is not valid.");
-            }
-        }
-    }
-
-    /**
-     * Set the page name
-     *
-     * @param string $name
-     * @return self
+     * Set the name of the page
      */
     public function pageName(string $name): self
     {
@@ -216,15 +145,22 @@ class Config
 
     /**
      * Set the total number of pages
-     *
-     * @param string|int $pages
-     * @return self
      */
-    public function pages($pages): self
+    public function totalPages(Closure|string $totalPages): self
     {
-        $this->pages = $this->resolveInt($pages, 1);
+        $this->totalPages = $this->integerFromResponse($totalPages, minimum: 1);
+
+        // $this->totalPages = $this->extractor->integerFromResponse($totalPages);
 
         return $this;
+    }
+
+    private function integerFromResponse(Closure|string $key, int $minimum = 0): int
+    {
+        return (int) max($minimum, match (true) {
+            $key instanceof Closure => $key($this->source->response()),
+            default => $this->source->response()->json($key) ?? $this->source->response()->header($key),
+        });
     }
 
     /**
@@ -236,7 +172,7 @@ class Config
      */
     protected function resolveInt($value, int $minimum): int
     {
-        return (int) max($minimum, $this->resolvePage($value));
+        return max($minimum, (int) $this->resolvePage($value));
     }
 
     /**
@@ -259,39 +195,28 @@ class Config
 
     /**
      * Set the total number of items
-     *
-     * @param string|int $items
-     * @return self
      */
-    public function items($items): self
+    public function totalItems(Closure|string $totalItems): self
     {
-        $this->items = $this->resolveInt($items, 0);
+        $this->totalItems = $this->integerFromResponse($totalItems);
 
         return $this;
     }
 
     /**
      * Set the number of items per page and optionally override it
-     *
-     * @param int $perPage
-     * @param string|null $query
-     * @param int $firstPageItems
-     * @return self
      */
-    public function perPage(int $perPage, string $query = null, int $firstPageItems = 1): self
+    public function perPage(int $perPage, ?string $key = null, int $firstPageItems = 1): self
     {
-        $this->perPage = max(1, $query ? $firstPageItems : $perPage);
-        $this->perPageQuery = $query;
-        $this->perPageOverride = $query ? max(1, $perPage) : null;
+        $this->perPage = max(1, $key ? $firstPageItems : $perPage);
+        $this->perPageKey = $key;
+        $this->perPageOverride = $key ? max(1, $perPage) : null;
 
         return $this;
     }
 
     /**
      * Set the next page
-     *
-     * @param string $key
-     * @return self
      */
     public function nextPage(string $key): self
     {
@@ -299,6 +224,14 @@ class Config
         $this->nextPage = $this->resolvePage($key);
 
         return $this;
+    }
+
+    private function pageFromResponse(Closure|string $key, int $minimum = 0): string|int
+    {
+        return (int) max($minimum, match (true) {
+            $key instanceof Closure => $key($this->source->response()),
+            default => $this->source->response()->json($key) ?? $this->source->response()->header($key),
+        });
     }
 
     /**
@@ -387,5 +320,27 @@ class Config
         $this->backoff = $callback;
 
         return $this;
+    }
+
+    public function make(): Config
+    {
+        return new Config(
+            $this->dot,
+            $this->pageName,
+            $this->firstPage,
+            $this->totalPages,
+            $this->totalItems,
+            $this->perPage,
+            $this->perPageKey,
+            $this->perPageOverride,
+            $this->nextPage,
+            $this->nextPageKey,
+            $this->lastPage,
+            $this->chunk,
+            $this->concurrency,
+            $this->timeout,
+            $this->attempts,
+            $this->backoff,
+        );
     }
 }
