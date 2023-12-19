@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Services;
 
+use Cerbero\JsonParser\Concerns\DetectsEndpoints;
 use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Sources\AnySource;
 use Closure;
 
 final class ConfigFactory
 {
+    use DetectsEndpoints;
+
     /**
      * The dot to extract items from.
      */
@@ -159,7 +162,7 @@ final class ConfigFactory
     {
         return (int) max($minimum, match (true) {
             $key instanceof Closure => $key($this->source->response()),
-            default => $this->source->response()->json($key) ?? $this->source->response()->header($key),
+            default => $this->source->response($key),
         });
     }
 
@@ -185,7 +188,7 @@ final class ConfigFactory
     {
         if (is_numeric($value)) {
             return (int) $value;
-        } elseif ($this->isEndpoint($value = $this->source->json($value))) {
+        } elseif (is_string($value) && $this->isEndpoint($value = $this->source->response($value))) {
             parse_str(parse_url($value, PHP_URL_QUERY), $query);
             $value = $query[$this->pageName];
         }
@@ -230,7 +233,7 @@ final class ConfigFactory
     {
         return (int) max($minimum, match (true) {
             $key instanceof Closure => $key($this->source->response()),
-            default => $this->source->response()->json($key) ?? $this->source->response()->header($key),
+            default => $this->source->response($key),
         });
     }
 

@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Sources;
 
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-interface Source
+abstract class Source
 {
-    public function request(): RequestInterface;
+    public final function __construct(
+        protected readonly mixed $source,
+    ) {
+    }
 
-    public function response(): ResponseInterface;
+    abstract public function matches(): bool;
+
+    abstract public function request(): RequestInterface;
+
+    abstract public function response(?string $key = null): mixed;
 }
