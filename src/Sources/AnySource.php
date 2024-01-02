@@ -5,22 +5,24 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Sources;
 
 use Cerbero\LazyJsonPages\Exceptions\UnsupportedSourceException;
-use Generator;
 use Psr\Http\Message\RequestInterface;
 
+/**
+ * The aggregator of sources.
+ */
 class AnySource extends Source
 {
     /**
      * @var class-string<Source>[]
      */
     protected array $supportedSources = [
-        CustomSource::class,
+        // CustomSource::class,
         Endpoint::class,
-        LaravelClientRequest::class,
-        LaravelClientResponse::class,
-        LaravelRequest::class,
-        Psr7Request::class,
-        SymfonyRequest::class,
+        // LaravelClientRequest::class,
+        // LaravelClientResponse::class,
+        // LaravelRequest::class,
+        // Psr7Request::class,
+        // SymfonyRequest::class,
     ];
 
     /**
@@ -29,13 +31,16 @@ class AnySource extends Source
     protected ?Source $matchingSource;
 
     /**
-     * Determine whether the JSON source can be handled
+     * Determine whether this class can handle the source
      */
     public function matches(): bool
     {
         return true;
     }
 
+    /**
+     * Retrieve the HTTP request
+     */
     public function request(): RequestInterface
     {
         return $this->matchingSource()->request();
@@ -52,7 +57,9 @@ class AnySource extends Source
             return $this->matchingSource;
         }
 
-        foreach ($this->sources() as $source) {
+        foreach ($this->supportedSources as $class) {
+            $source = new $class($this->source);
+
             if ($source->matches()) {
                 return $this->matchingSource = $source;
             }
@@ -62,17 +69,10 @@ class AnySource extends Source
     }
 
     /**
-     * Retrieve all available sources
+     * Retrieve the HTTP response or part of it
      *
-     * @return Generator<int, Source>
+     * @return ($key is string ? mixed : \Cerbero\LazyJsonPages\ValueObjects\Response)
      */
-    protected function sources(): Generator
-    {
-        foreach ($this->supportedSources as $source) {
-            yield new $source($this->source);
-        }
-    }
-
     public function response(?string $key = null): mixed
     {
         return $this->matchingSource()->response($key);

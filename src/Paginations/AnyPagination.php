@@ -26,7 +26,7 @@ class AnyPagination extends Pagination
     ];
 
     /**
-     * Determine whether the configuration matches this pagination.
+     * Determine whether this pagination matches the configuration.
      */
     public function matches(): bool
     {
