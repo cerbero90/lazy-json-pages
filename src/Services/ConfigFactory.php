@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Services;
 
-use Cerbero\JsonParser\Concerns\DetectsEndpoints;
 use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Sources\AnySource;
+use Cerbero\LazyJsonPages\ValueObjects\Response;
 use Closure;
 
 final class ConfigFactory
 {
-    use DetectsEndpoints;
-
     /**
      * The dot to extract items from.
      */
@@ -51,68 +49,55 @@ final class ConfigFactory
     /**
      * The new number of items per page.
      */
-    private int $perPageOverride;
+    private ?int $perPageOverride = null;
 
     /**
-     * The next page of a simple or cursor pagination.
-     *
-     * @var string|int
+     * The next page number, link or cursor.
      */
-    private $nextPage;
+    private ?Closure $nextPage = null;
 
     /**
      * The key holding the next page.
-     *
-     * @var string
      */
-    private $nextPageKey;
+    private ?string $nextPageKey = null;
 
     /**
      * The number of the last page.
-     *
-     * @var int
      */
-    private $lastPage;
+    private ?int $lastPage = null;
 
     /**
-     * The number of pages to fetch per chunk.
-     *
-     * @var int
+     * The number of pages to fetch asynchronously per chunk.
      */
-    private $chunk;
+    private ?int $chunk = null;
 
     /**
      * The maximum number of concurrent async HTTP requests.
-     *
-     * @var int
      */
-    private $concurrency = 10;
+    private int $concurrency = 10;
 
     /**
      * The timeout in seconds.
-     *
-     * @var int
      */
-    private $timeout = 5;
+    private int $timeout = 5;
 
     /**
      * The number of attempts to fetch pages.
-     *
-     * @var int
      */
-    private $attempts = 3;
+    private int $attempts = 3;
 
     /**
      * The backoff strategy.
-     *
-     * @var callable
      */
-    private $backoff;
+    private ?Closure $backoff = null;
 
+    /**
+     * Instantiate the class.
+     */
     public function __construct(private AnySource $source) {}
 
     /**
-     * Set the dot-notation path to extract items from
+     * Set the dot-notation path to extract items from.
      */
     public function dot(string $dot): self
     {
@@ -122,7 +107,7 @@ final class ConfigFactory
     }
 
     /**
-     * Set the name of the page
+     * Set the name of the page.
      */
     public function pageName(string $name): self
     {
@@ -133,9 +118,6 @@ final class ConfigFactory
 
     /**
      * Set the number of the first page
-     *
-     * @param int $page
-     * @return self
      */
     public function firstPage(int $page): self
     {
@@ -151,47 +133,23 @@ final class ConfigFactory
     {
         $this->totalPages = $this->integerFromResponse($totalPages, minimum: 1);
 
-        // $this->totalPages = $this->extractor->integerFromResponse($totalPages);
-
         return $this;
     }
 
+    /**
+     * Retrieve an integer from the response
+     */
     private function integerFromResponse(Closure|string $key, int $minimum = 0): int
     {
-        return (int) max($minimum, match (true) {
-            $key instanceof Closure => $key($this->source->response()),
-            default => $this->source->response($key),
-        });
+        return (int) max($minimum, $this->valueFromResponse($key));
     }
 
     /**
-     * Retrieve an integer from the given value
-     *
-     * @param string|int $value
-     * @param int $minimum
-     * @return int
+     * Retrieve a value from the response
      */
-    protected function resolveInt($value, int $minimum): int
+    private function valueFromResponse(Closure|string $key): mixed
     {
-        return max($minimum, (int) $this->resolvePage($value));
-    }
-
-    /**
-     * Retrieve the page value from the given presumed URL
-     *
-     * @param mixed $value
-     * @return mixed
-     */
-    protected function resolvePage($value)
-    {
-        if (is_numeric($value)) {
-            return (int) $value;
-        } elseif (is_string($value) && $this->isEndpoint($value = $this->source->response($value))) {
-            parse_str(parse_url($value, PHP_URL_QUERY), $query);
-            $value = $query[$this->pageName];
-        }
-
-        return is_numeric($value) ? (int) $value : $value;
+        return $key instanceof Closure ? $key($this->source->response()) : $this->source->response($key);
     }
 
     /**
@@ -219,31 +177,19 @@ final class ConfigFactory
     /**
      * Set the next page
      */
-    public function nextPage(string $key): self
+    public function nextPage(Closure|string $key): self
     {
-        $this->nextPageKey = $key;
-        $this->nextPage = $this->resolvePage($key);
+        $this->nextPage = $key instanceof Closure ? $key : fn(Response $response) => $response->get($key);
 
         return $this;
     }
 
-    private function pageFromResponse(Closure|string $key, int $minimum = 0): string|int
-    {
-        return (int) max($minimum, match (true) {
-            $key instanceof Closure => $key($this->source->response()),
-            default => $this->source->response($key),
-        });
-    }
-
     /**
      * Set the number of the last page
-     *
-     * @param string|int $page
-     * @return self
      */
-    public function lastPage($page): self
+    public function lastPage(Closure|string $key): self
     {
-        $this->lastPage = $this->resolvePage($page);
+        $this->lastPage = $this->integerFromResponse($key);
 
         return $this;
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Dtos;
 
+use Closure;
+
 final class Config
 {
     public function __construct(
@@ -15,7 +17,7 @@ final class Config
         public readonly ?int $perPage,
         public readonly ?string $perPageKey,
         public readonly int $perPageOverride,
-        public readonly string|int $nextPage,
+        public readonly ?Closure $nextPage,
         public readonly string $nextPageKey,
         public readonly int $lastPage,
         public readonly int $chunk,
