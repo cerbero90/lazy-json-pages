@@ -31,7 +31,7 @@ class AnySource extends Source
     protected ?Source $matchingSource;
 
     /**
-     * Determine whether this class can handle the source
+     * Determine whether this class can handle the source.
      */
     public function matches(): bool
     {
@@ -39,7 +39,7 @@ class AnySource extends Source
     }
 
     /**
-     * Retrieve the HTTP request
+     * Retrieve the HTTP request.
      */
     public function request(): RequestInterface
     {
@@ -47,7 +47,7 @@ class AnySource extends Source
     }
 
     /**
-     * Retrieve the matching source
+     * Retrieve the matching source.
      *
      * @throws UnsupportedSourceException
      */
@@ -69,7 +69,7 @@ class AnySource extends Source
     }
 
     /**
-     * Retrieve the HTTP response or part of it
+     * Retrieve the HTTP response or part of it.
      *
      * @return ($key is string ? mixed : \Cerbero\LazyJsonPages\ValueObjects\Response)
      */

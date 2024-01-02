@@ -6,6 +6,9 @@ namespace Cerbero\LazyJsonPages\Sources;
 
 use Psr\Http\Message\RequestInterface;
 
+/**
+ * The abstract implementation of a source.
+ */
 abstract class Source
 {
     final public function __construct(
@@ -13,17 +16,17 @@ abstract class Source
     ) {}
 
     /**
-     * Determine whether this class can handle the source
+     * Determine whether this class can handle the source.
      */
     abstract public function matches(): bool;
 
     /**
-     * Retrieve the HTTP request
+     * Retrieve the HTTP request.
      */
     abstract public function request(): RequestInterface;
 
     /**
-     * Retrieve the HTTP response or part of it
+     * Retrieve the HTTP response or part of it.
      *
      * @return ($key is string ? mixed : \Cerbero\LazyJsonPages\ValueObjects\Response)
      */
