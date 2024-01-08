@@ -5,35 +5,33 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages;
 
 use Cerbero\LazyJsonPages\Dtos\Config;
-use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
 use Cerbero\LazyJsonPages\Paginations\AnyPagination;
-use Cerbero\LazyJsonPages\Services\ConfigFactory;
+use Cerbero\LazyJsonPages\Services\Api;
 use Cerbero\LazyJsonPages\Sources\AnySource;
 use Closure;
 use Illuminate\Support\LazyCollection;
 use IteratorAggregate;
-use Throwable;
 use Traversable;
 
 /**
  * The Lazy JSON Pages entry-point.
  *
- * @implements IteratorAggregate<string|int, mixed>
+ * @implements IteratorAggregate<int, mixed>
  */
 final class LazyJsonPages implements IteratorAggregate
 {
     /**
      * Instantiate the class statically.
      *
-     * @param Closure(ConfigFactory): void $configure
-     * @return LazyCollection<string|int, mixed>
+     * @param Closure(Api): void $configure
+     * @return LazyCollection<int, mixed>
      */
     public static function from(mixed $source, Closure $configure): LazyCollection
     {
         $source = new AnySource($source);
-        $configure($config = new ConfigFactory($source));
+        $configure($api = new Api($source));
 
-        return new LazyCollection(fn() => yield from new self($source, $config->make()));
+        return new LazyCollection(fn() => yield from new self($source, $api->toConfig()));
     }
 
     /**
@@ -47,14 +45,14 @@ final class LazyJsonPages implements IteratorAggregate
     /**
      * Retrieve the paginated items lazily.
      *
-     * @return Traversable<string|int, mixed>
+     * @return Traversable<int, mixed>
      */
     public function getIterator(): Traversable
     {
-        try {
-            yield from new AnyPagination($this->source, $this->config);
-        } catch (Throwable $e) {
-            throw LazyJsonPagesException::from($e);
+        // yield each item within a loop - instead of using `yield from` - to ignore the actual item index
+        // and ensure indexes continuity, otherwise the index of items always starts from 0 on every page.
+        foreach (new AnyPagination($this->source, $this->config) as $item) {
+            yield $item;
         }
     }
 }

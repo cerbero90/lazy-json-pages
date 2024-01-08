@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Services;
 
+use Cerbero\LazyJson\Pointers\DotsConverter;
 use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Sources\AnySource;
 use Cerbero\LazyJsonPages\ValueObjects\Response;
 use Closure;
 
-final class ConfigFactory
+final class Api
 {
     /**
      * The dot to extract items from.
      */
     private string $dot = '*';
+
+    /**
+     * The JSON pointer to extract items from.
+     */
+    private string $pointer = '';
 
     /**
      * The name of the page.
@@ -67,19 +73,19 @@ final class ConfigFactory
     private ?int $lastPage = null;
 
     /**
-     * The number of pages to fetch asynchronously per chunk.
-     */
-    private ?int $chunk = null;
-
-    /**
      * The maximum number of concurrent async HTTP requests.
      */
-    private int $concurrency = 10;
+    private int $async = 3;
 
     /**
-     * The timeout in seconds.
+     * The server connection timeout in seconds.
      */
-    private int $timeout = 5;
+    private int $connectionTimeout = 5;
+
+    /**
+     * The HTTP request timeout in seconds.
+     */
+    private int $requestTimeout = 5;
 
     /**
      * The number of attempts to fetch pages.
@@ -102,6 +108,7 @@ final class ConfigFactory
     public function dot(string $dot): self
     {
         $this->dot = $dot;
+        $this->pointer = DotsConverter::toPointer($dot);
 
         return $this;
     }
@@ -117,7 +124,7 @@ final class ConfigFactory
     }
 
     /**
-     * Set the number of the first page
+     * Set the number of the first page.
      */
     public function firstPage(int $page): self
     {
@@ -127,17 +134,18 @@ final class ConfigFactory
     }
 
     /**
-     * Set the total number of pages
+     * Set the total number of pages.
      */
     public function totalPages(Closure|string $totalPages): self
     {
-        $this->totalPages = $this->integerFromResponse($totalPages, minimum: 1);
+        dd($this->integerFromResponse($totalPages, minimum: 1));
+        $this->totalPages = 2;/////////////////$this->integerFromResponse($totalPages, minimum: 1);
 
         return $this;
     }
 
     /**
-     * Retrieve an integer from the response
+     * Retrieve an integer from the response.
      */
     private function integerFromResponse(Closure|string $key, int $minimum = 0): int
     {
@@ -145,7 +153,7 @@ final class ConfigFactory
     }
 
     /**
-     * Retrieve a value from the response
+     * Retrieve a value from the response.
      */
     private function valueFromResponse(Closure|string $key): mixed
     {
@@ -153,7 +161,7 @@ final class ConfigFactory
     }
 
     /**
-     * Set the total number of items
+     * Set the total number of items.
      */
     public function totalItems(Closure|string $totalItems): self
     {
@@ -163,7 +171,7 @@ final class ConfigFactory
     }
 
     /**
-     * Set the number of items per page and optionally override it
+     * Set the number of items per page and optionally override it.
      */
     public function perPage(int $perPage, ?string $key = null, int $firstPageItems = 1): self
     {
@@ -175,7 +183,7 @@ final class ConfigFactory
     }
 
     /**
-     * Set the next page
+     * Set the next page.
      */
     public function nextPage(Closure|string $key): self
     {
@@ -185,7 +193,7 @@ final class ConfigFactory
     }
 
     /**
-     * Set the number of the last page
+     * Set the number of the last page.
      */
     public function lastPage(Closure|string $key): self
     {
@@ -195,59 +203,45 @@ final class ConfigFactory
     }
 
     /**
-     * Fetch pages synchronously
-     *
-     * @return self
+     * Fetch pages synchronously.
      */
     public function sync(): self
     {
-        return $this->chunk(1);
+        return $this->async(1);
     }
 
     /**
-     * Set the number of pages to fetch per chunk
-     *
-     * @param int $size
-     * @return self
+     * Set the maximum number of concurrent async HTTP requests.
      */
-    public function chunk(int $size): self
+    public function async(int $max): self
     {
-        $this->chunk = max(1, $size);
+        $this->async = max(1, $max);
 
         return $this;
     }
 
     /**
-     * Set the maximum number of concurrent async HTTP requests
-     *
-     * @param int $max
-     * @return self
+     * Set the server connection timeout in seconds.
      */
-    public function concurrency(int $max): self
+    public function connectionTimeout(float $seconds): self
     {
-        $this->concurrency = max(0, $max);
+        $this->connectionTimeout = max(0, $seconds);
 
         return $this;
     }
 
     /**
-     * Set the timeout in seconds
-     *
-     * @param int $seconds
-     * @return self
+     * Set an HTTP request timeout in seconds.
      */
-    public function timeout(int $seconds): self
+    public function requestTimeout(float $seconds): self
     {
-        $this->timeout = max(0, $seconds);
+        $this->requestTimeout = max(0, $seconds);
 
         return $this;
     }
 
     /**
-     * Set the number of attempts to fetch pages
-     *
-     * @param int $times
-     * @return self
+     * Set the number of attempts to fetch pages.
      */
     public function attempts(int $times): self
     {
@@ -257,22 +251,20 @@ final class ConfigFactory
     }
 
     /**
-     * Set the backoff strategy
-     *
-     * @param callable $callback
-     * @return self
+     * Set the backoff strategy.
      */
-    public function backoff(callable $callback): self
+    public function backoff(Closure $callback): self
     {
         $this->backoff = $callback;
 
         return $this;
     }
 
-    public function make(): Config
+    public function toConfig(): Config
     {
         return new Config(
             $this->dot,
+            $this->pointer,
             $this->pageName,
             $this->firstPage,
             $this->totalPages,
@@ -283,9 +275,9 @@ final class ConfigFactory
             $this->nextPage,
             $this->nextPageKey,
             $this->lastPage,
-            $this->chunk,
-            $this->concurrency,
-            $this->timeout,
+            $this->async,
+            $this->connectionTimeout,
+            $this->requestTimeout,
             $this->attempts,
             $this->backoff,
         );
