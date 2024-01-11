@@ -138,8 +138,7 @@ final class Api
      */
     public function totalPages(Closure|string $totalPages): self
     {
-        dd($this->integerFromResponse($totalPages, minimum: 1));
-        $this->totalPages = 2;/////////////////$this->integerFromResponse($totalPages, minimum: 1);
+        $this->totalPages = $this->integerFromResponse($totalPages, minimum: 1);
 
         return $this;
     }
