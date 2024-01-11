@@ -28,7 +28,7 @@ class Endpoint extends Source
     /**
      * The HTTP response value object
      */
-    protected Response $response;
+    protected ?Response $response = null;
 
     /**
      * Determine whether this class can handle the source.
@@ -57,7 +57,10 @@ class Endpoint extends Source
      */
     public function response(?string $key = null): mixed
     {
-        $this->response ??= (new Client())->send($this->request());
+        if (!$this->response) {
+            $response = (new Client())->send($this->request());
+            $this->response = new Response($response->getBody()->getContents(), $response->getHeaders());
+        }
 
         return $key === null ? $this->response : $this->response->get($key);
     }
