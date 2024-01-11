@@ -26,7 +26,7 @@ trait SendsAsyncRequests
     /**
      * Fetch items by performing asynchronous HTTP calls.
      *
-     * @param LazyCollection<int, int[]> $chunkedPages
+     * @param LazyCollection<int, LazyCollection<int, int>> $chunkedPages
      * @return Traversable<int, mixed>
      */
     protected function fetchItemsAsynchronously(LazyCollection $chunkedPages, UriInterface $uri): Traversable
@@ -37,8 +37,8 @@ trait SendsAsyncRequests
         ]);
 
         foreach ($chunkedPages as $pages) {
-            $outcome = $this->retry(function (Outcome $outcome) use ($uri, $client, $pages) {
-                $pages = $outcome->pullFailedPages() ?: $pages;
+            $outcome = $this->retry(function (Outcome $outcome) use ($uri, $client, $pages): Outcome {
+                $pages = $outcome->pullFailedPages() ?: $pages->all();
 
                 return $this->pool($client, $outcome, $this->yieldRequests($uri, $pages));
             });
@@ -75,7 +75,9 @@ trait SendsAsyncRequests
         $pool = new Pool($client, $requests, [
             'concurrency' => $this->config->async,
             'fulfilled' => function (ResponseInterface $response, int $page) use ($outcome) {
-                $outcome->addItemsFromPage($page, JsonParser::parse($response)->pointer($this->config->pointer));
+                /** @var Traversable<int, mixed> $items */
+                $items = JsonParser::parse($response)->pointer($this->config->pointer);
+                $outcome->addItemsFromPage($page, $items);
             },
             'rejected' => function (Throwable $e, int $page) use ($outcome) {
                 $outcome->addFailedPage($page);

@@ -22,8 +22,8 @@ final class Config
         public readonly ?string $nextPageKey,
         public readonly ?int $lastPage,
         public readonly int $async,
-        public readonly int $connectionTimeout,
-        public readonly int $requestTimeout,
+        public readonly float|int $connectionTimeout,
+        public readonly float|int $requestTimeout,
         public readonly int $attempts,
         public readonly ?Closure $backoff,
     ) {}

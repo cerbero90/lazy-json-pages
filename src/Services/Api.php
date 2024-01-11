@@ -80,12 +80,12 @@ final class Api
     /**
      * The server connection timeout in seconds.
      */
-    private int $connectionTimeout = 5;
+    private float|int $connectionTimeout = 5;
 
     /**
      * The HTTP request timeout in seconds.
      */
-    private int $requestTimeout = 5;
+    private float|int $requestTimeout = 5;
 
     /**
      * The number of attempts to fetch pages.

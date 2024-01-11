@@ -18,7 +18,10 @@ trait RetriesHttpRequests
     /**
      * Retry to return HTTP responses from the given callback.
      *
-     * @param Closure(Outcome) $callback
+     * @template TReturn
+     *
+     * @param (Closure(Outcome): TReturn) $callback
+     * @return TReturn
      */
     protected function retry(Closure $callback): mixed
     {

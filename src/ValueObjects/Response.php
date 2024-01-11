@@ -6,6 +6,7 @@ namespace Cerbero\LazyJsonPages\ValueObjects;
 
 use Cerbero\JsonParser\JsonParser;
 use Cerbero\LazyJson\Pointers\DotsConverter;
+use Traversable;
 
 /**
  * The HTTP response.
@@ -15,14 +16,14 @@ final class Response
     /**
      * The headers of the HTTP response.
      *
-     * @var array<string, string> $headers
+     * @var array<string, string[]> $headers
      */
     public readonly array $headers;
 
     /**
      * Instantiate the class.
      *
-     * @param array<string, string> $headers
+     * @param array<string, string[]> $headers
      */
     public function __construct(public readonly string $json, array $headers)
     {
@@ -32,8 +33,8 @@ final class Response
     /**
      * Normalize the given headers.
      *
-     * @param array<string, string> $headers
-     * @return array<string, string>
+     * @param array<string, string[]> $headers
+     * @return array<string, string[]>
      */
     private function normalizeHeaders(array $headers): array
     {
@@ -64,8 +65,10 @@ final class Response
 
     /**
      * Retrieve the given header.
+     *
+     * @return ?string[]
      */
-    public function header(string $header): ?string
+    public function header(string $header): ?array
     {
         return $this->headers[strtolower($header)] ?? null;
     }
@@ -83,9 +86,12 @@ final class Response
 
     /**
      * Retrieve an iterator with the given JSON pointer.
+     *
+     * @return Traversable<int, mixed>
      */
-    public function pointer(string $pointer): JsonParser
+    public function pointer(string $pointer): Traversable
     {
+        /** @var Traversable<int, mixed> */
         return JsonParser::parse($this->json)->pointer($pointer);
     }
 }

@@ -36,7 +36,7 @@ class Endpoint extends Source
     public function matches(): bool
     {
         return $this->source instanceof UriInterface
-            || (is_string($this->source) && $this->isEndpoint($this->source));
+            || $this->isEndpoint($this->source);
     }
 
     /**
