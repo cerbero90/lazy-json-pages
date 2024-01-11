@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\ValueObjects;
 
 use Cerbero\JsonParser\JsonParser;
+use Cerbero\LazyJson\Pointers\DotsConverter;
 
 /**
  * The HTTP response.
@@ -74,8 +75,17 @@ final class Response
      */
     public function json(string $key): mixed
     {
-        $array = JsonParser::parse($this->json)->pointer($key)->toArray();
+        $pointer = DotsConverter::toPointer($key);
+        $array = JsonParser::parse($this->json)->pointer($pointer)->toArray();
 
         return empty($array) ? null : current($array);
+    }
+
+    /**
+     * Retrieve an iterator with the given JSON pointer.
+     */
+    public function pointer(string $pointer): JsonParser
+    {
+        return JsonParser::parse($this->json)->pointer($pointer);
     }
 }
