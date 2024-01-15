@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Paginations;
 
 use Cerbero\LazyJsonPages\Dtos\Config;
-use Cerbero\LazyJsonPages\Sources\AnySource;
+use Cerbero\LazyJsonPages\Sources\Source;
 use IteratorAggregate;
 use Traversable;
 
@@ -29,7 +29,7 @@ abstract class Pagination implements IteratorAggregate
     abstract public function getIterator(): Traversable;
 
     final public function __construct(
-        protected readonly AnySource $source,
+        protected readonly Source $source,
         protected readonly Config $config,
     ) {}
 }
