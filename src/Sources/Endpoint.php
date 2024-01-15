@@ -8,6 +8,7 @@ use Cerbero\JsonParser\Concerns\DetectsEndpoints;
 use Cerbero\LazyJsonPages\ValueObjects\Response;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -58,7 +59,7 @@ class Endpoint extends Source
     public function response(?string $key = null): mixed
     {
         if (!$this->response) {
-            $response = (new Client())->send($this->request());
+            $response = (new Client([RequestOptions::STREAM => true]))->send($this->request());
             $this->response = new Response($response->getBody()->getContents(), $response->getHeaders());
         }
 

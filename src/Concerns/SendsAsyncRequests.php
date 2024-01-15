@@ -8,6 +8,7 @@ use Generator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Support\LazyCollection;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -32,8 +33,9 @@ trait SendsAsyncRequests
     protected function fetchItemsAsynchronously(LazyCollection $chunkedPages, UriInterface $uri): Traversable
     {
         $client = new Client([
-            'timeout' => $this->config->requestTimeout,
-            'connect_timeout' => $this->config->connectionTimeout,
+            RequestOptions::TIMEOUT => $this->config->requestTimeout,
+            RequestOptions::CONNECT_TIMEOUT => $this->config->connectionTimeout,
+            RequestOptions::STREAM => true,
         ]);
 
         foreach ($chunkedPages as $pages) {
