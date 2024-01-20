@@ -6,6 +6,7 @@ namespace Cerbero\LazyJsonPages\Sources;
 
 use Cerbero\LazyJsonPages\Exceptions\UnsupportedSourceException;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * The aggregator of sources.
@@ -69,12 +70,12 @@ class AnySource extends Source
     }
 
     /**
-     * Retrieve the HTTP response or part of it.
+     * Retrieve the HTTP response.
      *
-     * @return ($key is string ? mixed : \Cerbero\LazyJsonPages\ValueObjects\Response)
+     * @return ResponseInterface
      */
-    public function response(?string $key = null): mixed
+    public function response(): ResponseInterface
     {
-        return $this->matchingSource()->response($key);
+        return $this->matchingSource()->response();
     }
 }

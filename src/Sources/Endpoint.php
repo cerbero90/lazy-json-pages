@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Sources;
 
 use Cerbero\JsonParser\Concerns\DetectsEndpoints;
-use Cerbero\LazyJsonPages\ValueObjects\Response;
-use GuzzleHttp\Client;
+use Cerbero\LazyJsonPages\Services\Client;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 
 /**
@@ -24,12 +23,12 @@ class Endpoint extends Source
     /**
      * The HTTP request.
      */
-    protected RequestInterface $request;
+    protected readonly RequestInterface $request;
 
     /**
      * The HTTP response value object
      */
-    protected ?Response $response = null;
+    protected readonly ResponseInterface $response;
 
     /**
      * Determine whether this class can handle the source.
@@ -45,24 +44,16 @@ class Endpoint extends Source
      */
     public function request(): RequestInterface
     {
-        return $this->request ??= new Request('GET', $this->source, [
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json',
-        ]);
+        return $this->request ??= new Request('GET', $this->source);
     }
 
     /**
-     * Retrieve the HTTP response or part of it.
+     * Retrieve the HTTP response.
      *
-     * @return ($key is string ? mixed : \Cerbero\LazyJsonPages\ValueObjects\Response)
+     * @return ResponseInterface
      */
-    public function response(?string $key = null): mixed
+    public function response(): ResponseInterface
     {
-        if (!$this->response) {
-            $response = (new Client([RequestOptions::STREAM => true]))->send($this->request());
-            $this->response = new Response($response->getBody()->getContents(), $response->getHeaders());
-        }
-
-        return $key === null ? $this->response : $this->response->get($key);
+        return $this->response ??= Client::instance()->send($this->request());
     }
 }

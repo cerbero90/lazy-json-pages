@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Sources;
 
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * The abstract implementation of a source.
@@ -26,9 +27,9 @@ abstract class Source
     abstract public function request(): RequestInterface;
 
     /**
-     * Retrieve the HTTP response or part of it.
+     * Retrieve the HTTP response.
      *
-     * @return ($key is string ? mixed : \Cerbero\LazyJsonPages\ValueObjects\Response)
+     * @return ResponseInterface
      */
-    abstract public function response(?string $key = null): mixed;
+    abstract public function response(): ResponseInterface;
 }
