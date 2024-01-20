@@ -13,7 +13,7 @@ final class Config
         public readonly string $pointer = '',
         public readonly string $pageName = 'page',
         public readonly int $firstPage = 1,
-        public readonly ?int $totalPages = null,
+        public readonly ?string $totalPagesKey = null,
         public readonly ?int $totalItems = null,
         public readonly ?int $perPage = null,
         public readonly ?string $perPageKey = null,
@@ -22,8 +22,6 @@ final class Config
         public readonly ?string $nextPageKey = null,
         public readonly ?int $lastPage = null,
         public readonly int $async = 3,
-        public readonly float|int $connectionTimeout = 5,
-        public readonly float|int $requestTimeout = 5,
         public readonly int $attempts = 3,
         public readonly ?Closure $backoff = null,
     ) {}

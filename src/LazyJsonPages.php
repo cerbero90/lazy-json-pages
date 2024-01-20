@@ -7,9 +7,11 @@ namespace Cerbero\LazyJsonPages;
 use Cerbero\LazyJson\Pointers\DotsConverter;
 use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Paginations\AnyPagination;
+use Cerbero\LazyJsonPages\Services\Client;
 use Cerbero\LazyJsonPages\Sources\AnySource;
 use Cerbero\LazyJsonPages\ValueObjects\Response;
 use Closure;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Support\LazyCollection;
 
 /**
@@ -28,6 +30,15 @@ final class LazyJsonPages
      * @var array<string, mixed>
      */
     private array $config = [];
+
+    /**
+     * The Guzzle HTTP request options.
+     */
+    private array $requestOptions = [
+        RequestOptions::CONNECT_TIMEOUT => 5,
+        RequestOptions::READ_TIMEOUT => 5,
+        RequestOptions::TIMEOUT => 5,
+    ];
 
     /**
      * Instantiate the class statically.
@@ -68,9 +79,9 @@ final class LazyJsonPages
     /**
      * Set the total number of pages.
      */
-    public function totalPages(Closure|string $totalPages): self
+    public function totalPages(string $key): self
     {
-        $this->config['totalPages'] = $this->integerFromResponse($totalPages, minimum: 1);
+        $this->config['totalPagesKey'] = $key;
 
         return $this;
     }
@@ -104,11 +115,11 @@ final class LazyJsonPages
     /**
      * Set the number of items per page and optionally override it.
      */
-    public function perPage(int $perPage, ?string $key = null, int $firstPageItems = 1): self
+    public function perPage(int $items, ?string $key = null, int $firstPageItems = 1): self
     {
-        $this->config['perPage'] = max(1, $key ? $firstPageItems : $perPage);
+        $this->config['perPage'] = max(1, $key ? $firstPageItems : $items);
         $this->config['perPageKey'] = $key;
-        $this->config['perPageOverride'] = $key ? max(1, $perPage) : null;
+        $this->config['perPageOverride'] = $key ? max(1, $items) : null;
 
         return $this;
     }
@@ -144,9 +155,9 @@ final class LazyJsonPages
     /**
      * Set the maximum number of concurrent async HTTP requests.
      */
-    public function async(int $max): self
+    public function async(int $requests): self
     {
-        $this->config['async'] = max(1, $max);
+        $this->config['async'] = max(1, $requests);
 
         return $this;
     }
@@ -154,9 +165,9 @@ final class LazyJsonPages
     /**
      * Set the server connection timeout in seconds.
      */
-    public function connectionTimeout(float $seconds): self
+    public function connectionTimeout(float|int $seconds): self
     {
-        $this->config['connectionTimeout'] = max(0, $seconds);
+        $this->requestOptions[RequestOptions::CONNECT_TIMEOUT] = max(0, $seconds);
 
         return $this;
     }
@@ -164,9 +175,10 @@ final class LazyJsonPages
     /**
      * Set an HTTP request timeout in seconds.
      */
-    public function requestTimeout(float $seconds): self
+    public function requestTimeout(float|int $seconds): self
     {
-        $this->config['requestTimeout'] = max(0, $seconds);
+        $this->requestOptions[RequestOptions::TIMEOUT] = max(0, $seconds);
+        $this->requestOptions[RequestOptions::READ_TIMEOUT] = max(0, $seconds);
 
         return $this;
     }
@@ -201,6 +213,8 @@ final class LazyJsonPages
         $this->config['dot'] = $dot;
         $this->config['pointer'] = DotsConverter::toPointer($dot);
 
+        Client::configure($this->requestOptions);
+
         return new LazyCollection(function () {
             $items = new AnyPagination($this->source, new Config(...$this->config));
 
@@ -209,6 +223,8 @@ final class LazyJsonPages
             foreach ($items as $item) {
                 yield $item;
             }
+
+            Client::reset();
         });
     }
 }
