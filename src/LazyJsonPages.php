@@ -9,7 +9,6 @@ use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Paginations\AnyPagination;
 use Cerbero\LazyJsonPages\Services\Client;
 use Cerbero\LazyJsonPages\Sources\AnySource;
-use Cerbero\LazyJsonPages\ValueObjects\Response;
 use Closure;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Support\LazyCollection;
@@ -129,7 +128,7 @@ final class LazyJsonPages
      */
     public function nextPage(Closure|string $key): self
     {
-        $this->config['nextPage'] = $key instanceof Closure ? $key : fn(Response $response) => $response->get($key);
+        $this->config['nextPage'] = $this->valueFromResponse($key);
 
         return $this;
     }
