@@ -8,7 +8,7 @@ use Cerbero\LazyJsonPages\Exceptions\UnsupportedPaginationException;
 use Traversable;
 
 /**
- * The aggregator of paginations.
+ * The aggregator of supported paginations.
  */
 class AnyPagination extends Pagination
 {
@@ -39,7 +39,7 @@ class AnyPagination extends Pagination
     /**
      * Yield the paginated items.
      *
-     * @return Traversable<string|int, mixed>
+     * @return Traversable<int, mixed>
      */
     public function getIterator(): Traversable
     {
