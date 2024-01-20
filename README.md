@@ -78,7 +78,7 @@ When calling `collect()`, we indicate that the pagination structure is defined a
 
 ### 💧 Sources
 
-A source is any mean that can point to a paginated JSON API. A number of sources are supported by default:
+A source is any mean that can point to a paginated JSON API. A number of sources is supported by default:
 
 - **endpoint URIs**, e.g. `https://example.com/api/v1/users` or any instance of `Psr\Http\Message\UriInterface`
 - **PSR-7 requests**, i.e. any instance of `Psr\Http\Message\RequestInterface`
