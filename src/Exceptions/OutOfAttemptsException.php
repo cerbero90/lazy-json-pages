@@ -2,7 +2,7 @@
 
 namespace Cerbero\LazyJsonPages\Exceptions;
 
-use Cerbero\LazyJsonPages\Services\Outcome;
+use Closure;
 use GuzzleHttp\Exception\TransferException;
 use Illuminate\Support\LazyCollection;
 
@@ -12,13 +12,6 @@ use Illuminate\Support\LazyCollection;
 class OutOfAttemptsException extends LazyJsonPagesException
 {
     /**
-     * The pages that caused the failure.
-     *
-     * @var int[]
-     */
-    public readonly array $failedPages;
-
-    /**
      * The paginated items loaded before the failure.
      *
      * @var LazyCollection<int, mixed>
@@ -27,11 +20,13 @@ class OutOfAttemptsException extends LazyJsonPagesException
 
     /**
      * Instantiate the class.
+     *
+     * @param array<int, int> $failedPages
+     * @param (Closure(): Generator<int, mixed>) $items
      */
-    public function __construct(TransferException $e, Outcome $outcome)
+    public function __construct(TransferException $e, public readonly array $failedPages, Closure $items)
     {
-        $this->failedPages = $outcome->pullFailedPages();
-        $this->items = new LazyCollection(fn() => yield from $outcome->pullItems());
+        $this->items = new LazyCollection($items);
 
         parent::__construct($e->getMessage(), 0, $e);
     }
