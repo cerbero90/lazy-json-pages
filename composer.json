@@ -39,7 +39,6 @@
             "Cerbero\\LazyJsonPages\\": "src"
         },
         "files": [
-            "bootstrap.php",
             "helpers.php"
         ]
     },
