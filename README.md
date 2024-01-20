@@ -20,7 +20,8 @@ $lazyCollection = LazyJsonPages::from($source)
 
 Framework-agnostic package to load items from any paginated JSON API into a [Laravel lazy collection](https://laravel.com/docs/collections#lazy-collections) via async HTTP requests.
 
-Need to read large JSON with no pagination in a memory-efficient way? Consider using [🐼 Lazy JSON](https://github.com/cerbero90/lazy-json) or [🧩 JSON Parser](https://github.com/cerbero90/json-parser) instead.
+> [!TIP]
+> Need to read large JSON with no pagination in a memory-efficient way? Consider using [🐼 Lazy JSON](https://github.com/cerbero90/lazy-json) or [🧩 JSON Parser](https://github.com/cerbero90/json-parser) instead.
 
 
 ## 📦 Install
@@ -36,9 +37,9 @@ composer require cerbero/lazy-json-pages
 
 * [👣 Basics](#-basics)
 * [💧 Sources](#-sources)
-* [🏛️ Pagination structure](#-pagination-structure)
+* [🏛️ Pagination structure](#%EF%B8%8F-pagination-structure)
 * [📏 Length-aware paginations](#-length-aware-paginations)
-* [↪️ Cursor and next-page paginations](#-cursor-and-next-page-paginations)
+* [↪️ Cursor and next-page paginations](#%EF%B8%8F-cursor-and-next-page-paginations)
 * [🚀 Requests optimization](#-requests-optimization)
 * [💢 Errors handling](#-errors-handling)
 
@@ -118,7 +119,7 @@ Some API paginations may start with a page different from `1`. If that's the cas
 LazyJsonPages::from($source)->firstPage(0);
 ```
 
-Now that we have customized the basic structure of the API, we can describe how items are paginated depending on whether the pagination is [length-aware](#-length-aware-paginations) or [cursor](#-cursor-and-next-page-paginations) based.
+Now that we have customized the basic structure of the API, we can describe how items are paginated depending on whether the pagination is [length-aware](#-length-aware-paginations) or [cursor](#%EF%B8%8F-cursor-and-next-page-paginations) based.
 
 
 ### 📏 Length-aware paginations
@@ -159,7 +160,7 @@ LazyJsonPages::from($source)
 When dealing with a lot of data, it may be a good idea to fetch only 1 item on the first page and leverage the length information on that page to calculate the total number of pages/items without having to load all the other items of that page.
 
 We can do that by calling `perPage()` with:
-- the number of items that we want to show per page (we can override the pagination default)
+- the number of items that we want to show per page (we can also override the pagination default)
 - the query parameter or header that holds the number of items per page
 
 ```php
