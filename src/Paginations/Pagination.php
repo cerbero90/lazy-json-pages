@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Paginations;
 
+use Cerbero\LazyJsonPages\Concerns\ResolvesPages;
+use Cerbero\LazyJsonPages\Concerns\YieldsPaginatedItems;
 use Cerbero\LazyJsonPages\Dtos\Config;
+use Cerbero\LazyJsonPages\Services\Book;
 use Cerbero\LazyJsonPages\Sources\Source;
 use IteratorAggregate;
 use Traversable;
@@ -12,10 +15,18 @@ use Traversable;
 /**
  * The abstract implementation of a pagination.
  *
- * @implements IteratorAggregate<string|int, mixed>
+ * @implements IteratorAggregate<int, mixed>
  */
 abstract class Pagination implements IteratorAggregate
 {
+    use YieldsPaginatedItems;
+    use ResolvesPages;
+
+    /**
+     * The collector of pages.
+     */
+    public readonly Book $book;
+
     /**
      * Determine whether the configuration matches this pagination.
      */
@@ -24,12 +35,14 @@ abstract class Pagination implements IteratorAggregate
     /**
      * Yield the paginated items.
      *
-     * @return Traversable<string|int, mixed>
+     * @return Traversable<int, mixed>
      */
     abstract public function getIterator(): Traversable;
 
     final public function __construct(
         protected readonly Source $source,
         protected readonly Config $config,
-    ) {}
+    ) {
+        $this->book = new Book();
+    }
 }
