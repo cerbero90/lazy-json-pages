@@ -3,7 +3,6 @@
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\LazyJsonPages\Exceptions\OutOfAttemptsException;
-use Cerbero\LazyJsonPages\Services\Outcome;
 use Closure;
 use Generator;
 use GuzzleHttp\Exception\TransferException;
@@ -26,7 +25,6 @@ trait RetriesHttpRequests
     protected function retry(Closure $callback): mixed
     {
         $attempt = 0;
-        $outcome = new Outcome();
         $remainingAttempts = $this->config->attempts;
 
         do {
@@ -34,12 +32,12 @@ trait RetriesHttpRequests
             $remainingAttempts--;
 
             try {
-                return $callback($outcome);
+                return $callback();
             } catch (TransferException $e) {
                 if ($remainingAttempts > 0) {
                     $this->backoff($attempt);
                 } else {
-                    throw new OutOfAttemptsException($e, $outcome);
+                    $this->outOfAttempts($e);
                 }
             }
         } while ($remainingAttempts > 0);
@@ -56,6 +54,18 @@ trait RetriesHttpRequests
     }
 
     /**
+     * Throw the out of attempts exception.
+     */
+    protected function outOfAttempts(TransferException $e): never
+    {
+        throw new OutOfAttemptsException($e, $this->book->pullFailedPages(), function () {
+            foreach ($this->book->pullPages() as $page) {
+                yield from $this->yieldItemsFrom($page);
+            }
+        });
+    }
+
+    /**
      * Retry to yield HTTP responses from the given callback.
      *
      * @param callable $callback
@@ -64,7 +74,6 @@ trait RetriesHttpRequests
     protected function retryYielding(callable $callback): Generator
     {
         $attempt = 0;
-        $outcome = new Outcome();
         $remainingAttempts = $this->config->attempts;
 
         do {
@@ -73,14 +82,14 @@ trait RetriesHttpRequests
             $remainingAttempts--;
 
             try {
-                yield from $callback($outcome);
+                yield from $callback();
             } catch (TransferException $e) {
                 $failed = true;
 
                 if ($remainingAttempts > 0) {
                     $this->backoff($attempt);
                 } else {
-                    throw new OutOfAttemptsException($e, $outcome);
+                    $this->outOfAttempts($e);
                 }
             }
         } while ($failed && $remainingAttempts > 0);

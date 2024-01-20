@@ -3,52 +3,50 @@
 namespace Cerbero\LazyJsonPages\Services;
 
 use Generator;
-use Traversable;
+use Psr\Http\Message\ResponseInterface;
 
 /**
- * The outcome of fetching paginated items.
+ * The collector of pages.
  */
-final class Outcome
+final class Book
 {
     /**
-     * The iterators yielding items from pages.
+     * The HTTP responses of the fetched pages.
      *
-     * @var array<int, Traversable<int, mixed>>
+     * @var array<int, ResponseInterface>
      */
-    private array $itemsByPage = [];
+    private array $pages = [];
 
     /**
      * The pages unable to be fetched.
      *
-     * @var int[]
+     * @var array<int, int>
      */
     private array $failedPages = [];
 
     /**
-     * Add the yielded items from the given page.
-     *
-     * @param Traversable<int, mixed> $items
+     * Add the HTTP response of the given page.
      */
-    public function addItemsFromPage(int $page, Traversable $items): self
+    public function addPage(int $page, ResponseInterface $response): self
     {
-        $this->itemsByPage[$page] = $items;
+        $this->pages[$page] = $response;
 
         return $this;
     }
 
     /**
-     * Traverse and unset the items.
+     * Yield and forget each page.
      *
      * @return Generator<int, mixed>
      */
-    public function pullItems(): Generator
+    public function pullPages(): Generator
     {
-        ksort($this->itemsByPage);
+        ksort($this->pages);
 
-        foreach ($this->itemsByPage as $page => $items) {
-            yield from $items;
+        foreach ($this->pages as $page => $response) {
+            yield $response;
 
-            unset($this->itemsByPage[$page]);
+            unset($this->pages[$page]);
         }
     }
 
@@ -65,7 +63,7 @@ final class Outcome
     /**
      * Retrieve and unset the failed pages.
      *
-     * @return int[]
+     * @return array<int, int>
      */
     public function pullFailedPages(): array
     {
