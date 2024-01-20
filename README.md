@@ -1,4 +1,4 @@
-# 🐼 Lazy JSON Pages
+# 📜 Lazy JSON Pages
 
 [![Author][ico-author]][link-author]
 [![PHP Version][ico-php]][link-php]
@@ -12,19 +12,16 @@
 [![Total Downloads][ico-downloads]][link-downloads]
 
 ```php
-$lazyCollection = LazyCollection::fromJsonPages($source, fn (Config $config) => $config
-    ->dot('data.results')
-    ->pages('total_pages')
-    ->perPage(500, 'page_size')
-    ->chunk(3)
-    ->timeout(15)
-    ->attempts(5)
-    ->backoff(fn (int $attempt) => $attempt ** 2 * 100));
+$lazyCollection = LazyJsonPages::from($source)
+    ->totalPages('pagination.total_pages')
+    ->async(requests: 5)
+    ->collect('data.*');
 ```
 
 Framework-agnostic package to load items from any paginated JSON API into a [Laravel lazy collection](https://laravel.com/docs/collections#lazy-collections) via async HTTP requests.
 
 Need to read large JSON with no pagination in a memory-efficient way? Consider using [🐼 Lazy JSON](https://github.com/cerbero90/lazy-json) or [🧩 JSON Parser](https://github.com/cerbero90/json-parser) instead.
+
 
 ## 📦 Install
 
@@ -34,266 +31,188 @@ Via Composer:
 composer require cerbero/lazy-json-pages
 ```
 
+
 ## 🔮 Usage
 
-- [📏 Length-aware paginations](#-length-aware-paginations)
-- [↪️ Cursor and next-page paginations](#-cursor-and-next-page-paginations)
-- [🛠 Requests fine-tuning](#-requests-fine-tuning)
-- [💢 Errors handling](#-errors-handling)
+* [👣 Basics](#-basics)
+* [💧 Sources](#-sources)
+* [🏛️ Pagination structure](#-pagination-structure)
+* [📏 Length-aware paginations](#-length-aware-paginations)
+* [↪️ Cursor and next-page paginations](#-cursor-and-next-page-paginations)
+* [🚀 Requests optimization](#-requests-optimization)
+* [💢 Errors handling](#-errors-handling)
 
-Loading paginated items of JSON APIs into a lazy collection is possible by calling the collection itself or the included helper:
 
-```php
-$items = LazyCollection::fromJsonPages($source, $path, $config);
+### 👣 Basics
 
-$items = lazyJsonPages($source, $path, $config);
-```
-
-The source which paginated items are fetched from can be either a PSR-7 request or a Laravel HTTP client response:
+Depending on our coding style, we can call Lazy JSON Pages in 3 different ways:
 
 ```php
-// the Guzzle request is just an example, any PSR-7 request can be used as well
-$source = new GuzzleHttp\Psr7\Request('GET', 'https://paginated-json-api.test');
+use Cerbero\LazyJsonPages\LazyJsonPages;
 
-// Lazy JSON Pages integrates well with Laravel and supports its HTTP client responses
-$source = Http::get('https://paginated-json-api.test');
+use function Cerbero\LazyJsonPages\lazyJsonPages;
+
+// classic instantiation
+$lazyJsonPages = new LazyJsonPages($source);
+
+// static method (easier methods chaining)
+$lazyJsonPages = LazyJsonPages::from($source);
+
+// namespaced helper
+$lazyJsonPages = lazyJsonPages($source);
 ```
 
-Lazy JSON Pages only changes the page query parameter when fetching pages. This means that if the first request was authenticated (e.g. via bearer token), the requests to fetch the other pages will be authenticated as well.
-
-The second argument, `$path`, is the key within JSON APIs holding the paginated items. The path supports dot-notation so if the key is nested, we can define its nesting levels with dots. For example, given the following JSON:
-
-```json
-{
-    "data": {
-        "results": [
-            {
-                "id": 1
-            },
-            {
-                "id": 2
-            }
-        ]
-    }
-}
-```
-
-the path to the paginated items would be `data.results`. All nested JSON keys can be defined with dot-notation, including the keys to set in the configuration.
-
-APIs are all different so Lazy JSON Pages allows us to define tailored configurations for each of them. The configuration can be set with the following variants:
+The variable `$source` in our examples represents any [source](#-sources) that points to a paginated JSON API. Once we define the source, we can then chain methods to define how the API is paginated:
 
 ```php
-// assume that the integer indicates the number of pages
-// to be used when the number is known (e.g. via previous HTTP request)
-lazyJsonPages($source, $path, 10);
-
-// assume that the string indicates the JSON key holding the number of pages
-lazyJsonPages($source, $path, 'total_pages');
-
-// set the config with an associative array
-// both snake_case and camelCase keys are allowed
-lazyJsonPages($source, $path, [
-    'items' => 'total_items',
-    'per_page' => 50,
-]);
-
-// set the config through its fluent methods
-use Cerbero\LazyJsonPages\Config;
-
-lazyJsonPages($source, $path, function (Config $config) {
-    $config->items('total_items')->perPage(50);
-});
+$lazyCollection = LazyJsonPages::from($source)
+    ->totalItems('pagination.total_items')
+    ->perPage(20)
+    ->offset()
+    ->collect('results.*');
 ```
 
-The configuration depends on the type of pagination. Various paginations are supported, including length-aware and cursor paginations.
+When calling `collect()`, we indicate that the pagination structure is defined and that we are ready to collect the paginated items within a [Laravel lazy collection](https://laravel.com/docs/collections#lazy-collections), where we can loop through the items one by one and apply filters and transformations in a memory-efficient way.
+
+
+### 💧 Sources
+
+A source is any mean that can point to a paginated JSON API. A number of sources are supported by default:
+
+- **endpoint URIs**, e.g. `https://example.com/api/v1/users` or any instance of `Psr\Http\Message\UriInterface`
+- **PSR-7 requests**, i.e. any instance of `Psr\Http\Message\RequestInterface`
+- **Laravel HTTP client requests**, i.e. any instance of `Illuminate\Http\Client\Request`
+- **Laravel HTTP client responses**, i.e. any instance of `Illuminate\Http\Client\Response`
+- **user-defined sources**, i.e. any instance of `Cerbero\LazyJsonPages\Sources\Source`
+
+Here are some examples of sources:
+
+```php
+// any PSR-7 compatible request is supported, including Guzzle requests
+$source = new GuzzleHttp\Psr7\Request('GET', 'https://example.com/api');
+
+// while being framework-agnostic, Lazy JSON Pages integrates well with Laravel
+$source = Http::withToken($bearer)->get('https://example.com/api');
+```
+
+
+### 🏛️ Pagination structure
+
+After defining the [source](#-sources), we need to let Lazy JSON Pages know what the paginated API looks like.
+
+If the API uses a query parameter different from `page` to specify the current page - for example `?current_page=1` - we can chain the method `pageName()`:
+
+```php
+LazyJsonPages::from($source)->pageName('current_page');
+```
+
+Otherwise, if the number of the current page is present in the URI path - for example `https://example.com/users/1` - we can chain the method `pageInPath()`:
+
+```php
+LazyJsonPages::from($source)->pageInPath();
+```
+
+Some API paginations may start with a page different from `1`. If that's the case, we can define the first page by chaining the method `firstPage()`:
+
+```php
+LazyJsonPages::from($source)->firstPage(0);
+```
+
+Now that we have customized the basic structure of the API, we can describe how items are paginated depending on whether the pagination is [length-aware](#-length-aware-paginations) or [cursor](#-cursor-and-next-page-paginations) based.
 
 
 ### 📏 Length-aware paginations
 
-The term "length-aware" indicates all paginations that show at least one of the following numbers:
+The term "length-aware" indicates any pagination containing at least one of the following length information:
 - the total number of pages
 - the total number of items
 - the number of the last page
 
-Lazy JSON Pages only needs one of these numbers to work properly. When setting the number of items, we can also define the number of items shown per page (if we know it) to save some more memory. The following are all valid configurations:
+Lazy JSON Pages only needs one of these details to work properly:
 
 ```php
-// configure the total number of pages:
-$config = 10;
-$config = 'total_pages';
-$config = ['pages' => 'total_pages'];
-$config->pages('total_pages');
+LazyJsonPages::from($source)->totalPages('pagination.total_pages');
 
-// configure the total number of items:
-$config = ['items' => 500];
-$config = ['items' => 'total_items'];
-$config = ['items' => 'total_items', 'per_page' => 50];
-$config->items('total_items');
-$config->items('total_items')->perPage(50);
+LazyJsonPages::from($source)->totalItems('pagination.total_items');
 
-// configure the number of the last page:
-$config = ['last_page' => 10];
-$config = ['last_page' => 'last_page_key'];
-$config = ['last_page' => 'https://paginated-json-api.test?page=10'];
-$config->lastPage(10);
-$config->lastPage('last_page_key');
-$config->lastPage('https://paginated-json-api.test?page=10');
+LazyJsonPages::from($source)->lastPage('pagination.last_page');
 ```
 
-Depending on the APIs, the last page may be indicated as a number or as a URL, Lazy JSON Pages supports both.
+If the length information is nested in the JSON body, we can use dot-notation to indicate the level of nesting. For example, `pagination.total_pages` means that the total number of pages sits in the object `pagination`, under the key `total_pages`.
 
-By default this package assumes that the name of the page query parameter is `page` and that the first page is `1`. If that is not the case, we can update the defaults by adding this configuration:
+Otherwise, if the length information is displayed in the headers, we can use the same methods to gather it by simply defining the name of the header:
 
 ```php
-$config->pageName('page_number')->firstPage(0);
-// or
-$config = [
-    'page_name' => 'page_number',
-    'first_page' => 0,
-];
+LazyJsonPages::from($source)->lastPage('X-Last-Page');
 ```
 
-When dealing with a lot of data, it's a good idea to fetch only 1 item (or a few if 1 is not allowed) on the first page to count the total number of pages/items without wasting memory and then fetch all the calculated pages with many more items.
+APIs can expose their length information in the form of numbers (`total_pages: 10`) or URIs (`last_page: "https://example.com?page=10"`), Lazy JSON Pages supports both.
 
-We can do that with the "per page" setting by passing:
-- the new number of items to show per page
-- the query parameter holding the number of items per page
+To save more memory when setting the total number of items, we can also define the number of items shown in each page:
 
 ```php
-$source = new Request('GET', 'https://paginated-json-api.test?page_size=1');
-
-$items = lazyJsonPages($source, $path, function (Config $config) {
-    $config->pages('total_pages')->perPage(500, 'page_size');
-});
+LazyJsonPages::from($source)
+    ->totalItems('pagination.total_items')
+    ->perPage(20);
 ```
 
-Some APIs do not allow to request only 1 item per page, in these cases we can specify the number of items present on the first page as third argument:
+When dealing with a lot of data, it may be a good idea to fetch only 1 item on the first page and leverage the length information on that page to calculate the total number of pages/items without having to load all the other items of that page.
+
+We can do that by calling `perPage()` with:
+- the number of items that we want to show per page (we can override the pagination default)
+- the query parameter or header that holds the number of items per page
 
 ```php
-$source = new Request('GET', 'https://paginated-json-api.test?page_size=5');
+// indicate that the number of items per page is defined by the `limit` query parameter, e.g. ?limit=50
+LazyJsonPages::from($source)
+    ->totalItems('pagination.total_items')
+    ->perPage(30, 'limit');
 
-$items = lazyJsonPages($source, $path, function (Config $config) {
-    $config->pages('total_pages')->perPage(500, 'page_size', 5);
-});
+// indicate that the number of items per page is defined by the `X-Limit` header
+LazyJsonPages::from($source)
+    ->totalItems('pagination.total_items')
+    ->perPage(30, header: 'X-Limit');
 ```
 
-As always, we can either set the configuration through the `Config` object or with an associative array:
+Some APIs may not allow to request only 1 item per page, in these cases we can specify how many items should be loaded on the first page as third argument:
 
 ```php
-$config = [
-    'pages' => 'total_pages',
-    'per_page' => [500, 'page_size', 5],
-];
+LazyJsonPages::from($source)
+    ->totalItems('pagination.total_items')
+    ->perPage(30, 'limit', 5);
+
+LazyJsonPages::from($source)
+    ->totalItems('pagination.total_items')
+    ->perPage(30, header: 'X-Limit', firstPageItems: 5);
 ```
 
-From now on we will just use the object-oriented version for brevity. Also note that the "per page" strategy can be used with any of the configurations seen so far:
+We can leverage the `perPage()` strategy with all the length-aware methods seen before:
 
 ```php
-$config->pages('total_pages')->perPage(500, 'page_size');
-// or
-$config->items('total_items')->perPage(500, 'page_size');
-// or
-$config->lastPage('last_page_key')->perPage(500, 'page_size');
+LazyJsonPages::from($source)->totalPages('pagination.total_pages')->perPage(30, 'limit');
+
+LazyJsonPages::from($source)->totalItems('pagination.total_items')->perPage(30, 'limit');
+
+LazyJsonPages::from($source)->lastPage('pagination.last_page')->perPage(30, 'limit');
 ```
 
 
 ### ↪️ Cursor and next-page paginations
 
-Some APIs show only the number or cursor of the next page in all pages. We can tackle this kind of pagination by indicating the JSON key holding the next page:
-
-```php
-$config->nextPage('next_page_key');
-```
-
-The JSON key may hold a number, a cursor or a URL, Lazy JSON Pages supports all of them.
+> [!WARNING]
+> The documentation of this feature is a work in progress.
 
 
-### 🛠 Requests fine-tuning
+### 🚀 Requests optimization
 
-Lazy JSON Pages provides a number of settings to adjust the way HTTP requests are sent to fetch pages. For example pages can be requested in chunks, so that only a few streams are kept in memory at once:
-
-```php
-$config->chunk(3);
-```
-
-The configuration above fetches 3 pages concurrently, loads the paginated items into a lazy collection and proceeds with the next 3 pages. Chunking benefits memory usage at the expense of speed, no chunking is set by default but it is recommended when dealing with a lot of data.
-
-To minimize the memory usage Lazy JSON Pages can fetch pages synchronously, i.e. one by one, beware that this is also the slowest solution:
-
-```php
-$config->sync();
-```
-
-We can also set how many HTTP requests we want to send concurrently. By default 10 pages are fetched asynchronously:
-
-```php
-$config->concurrency(25);
-```
-
-Every HTTP request has a timeout of 5 seconds by default, but some APIs may be slow to respond. In this case we may need to set a higher timeout:
-
-```php
-$config->timeout(15);
-```
-
-When a request fails, it has up to 3 attempts to succeed. This number can of course be adjusted as needed:
-
-```php
-$config->attempts(5);
-```
-
-The backoff strategy allows us to wait some time before sending other requests when one page fails to be loaded. The package provides an exponential backoff by default, when a request fails it gets retried after 0, 1, 4, 9 seconds and so on. This strategy can also be overridden:
-
-```php
-$config->backoff(function (int $attempt) {
-    return $attempt ** 2 * 100;
-});
-```
-
-The above backoff strategy will wait for 100, 400, 900 milliseconds and so on.
-
-Putting all together, this is one of the possible configurations:
-
-```php
-$source = new Request('GET', 'https://paginated-json-api.test?page_size=1');
-
-$items = lazyJsonPages($source, 'data.results', function (Config $config) {
-    $config
-        ->pages('total_pages')
-        ->perPage(500, 'page_size')
-        ->chunk(3)
-        ->timeout(15)
-        ->attempts(5)
-        ->backoff(fn (int $attempt) => $attempt ** 2 * 100);
-});
-
-$items
-    ->filter(fn (array $item) => $this->isValid($item))
-    ->map(fn (array $item) => $this->transform($item))
-    ->each(fn (array $item) => $this->save($item));
-```
+> [!WARNING]
+> The documentation of this feature is a work in progress.
 
 
 ### 💢 Errors handling
 
-As seen above, we can mitigate potentially faulty HTTP requests with backoffs, timeouts and retries. When we reach the maximum number of attempts and a request keeps failing, an `OutOfAttemptsException` is thrown.
-
-When caught, this exception provides information about what went wrong, including the actual exception that was thrown, the pages that failed to be fetched and the paginated items that were loaded before the failure happened:
-
-```php
-use Cerbero\LazyJsonPages\Exceptions\OutOfAttemptsException;
-
-try {
-    $items = lazyJsonPages($source, $path, $config);
-} catch (OutOfAttemptsException $e) {
-    // the actual exception that was thrown
-    $e->original;
-    // the pages that failed to be fetched
-    $e->failedPages;
-    // a LazyCollection with items loaded before the error
-    $e->items;
-}
-```
+> [!WARNING]
+> The documentation of this feature is a work in progress.
 
 ## 📆 Change log
 
