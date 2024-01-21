@@ -1,5 +1,11 @@
 <?php
 
+use Cerbero\LazyJsonPages\Services\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -24,9 +30,26 @@
 |
 */
 
-// expect()->extend('toBeOne', function () {
-//     return $this->toBe(1);
-// });
+expect()->extend('toLoadItemsViaRequests', function (array $items, array $requests) {
+    $responses = $transactions = $expectedUris = [];
+
+    foreach ($requests as $uri => $fixture) {
+        $responses[] = new Response(body: file_get_contents(fixture($fixture)));
+        $expectedUris[] = $uri;
+    }
+
+    $stack = HandlerStack::create(new MockHandler($responses));
+
+    $stack->push(Middleware::history($transactions));
+
+    Client::configure(['handler' => $stack]);
+
+    $this->sequence(...$items);
+
+    $actualUris = array_map(fn(array $transaction) => (string) $transaction['request']->getUri(), $transactions);
+
+    expect($actualUris)->toBe($expectedUris);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +62,6 @@
 |
 */
 
-// function something()
-// {
-//     // ..
-// }
+function fixture(string $filename) {
+    return __DIR__ . "/fixtures/{$filename}";
+}
