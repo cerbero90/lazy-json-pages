@@ -12,15 +12,6 @@ use Psr\Http\Message\ResponseInterface;
  */
 abstract class Source
 {
-    final public function __construct(
-        protected readonly mixed $source,
-    ) {}
-
-    /**
-     * Determine whether this class can handle the source.
-     */
-    abstract public function matches(): bool;
-
     /**
      * Retrieve the HTTP request.
      */
@@ -32,4 +23,16 @@ abstract class Source
      * @return ResponseInterface
      */
     abstract public function response(): ResponseInterface;
+
+    final public function __construct(
+        protected readonly mixed $source,
+    ) {}
+
+    /**
+     * Determine whether this class can handle the source.
+     */
+    public function matches(): bool
+    {
+        return true;
+    }
 }

@@ -84,6 +84,8 @@ A source is any mean that can point to a paginated JSON API. A number of sources
 - **PSR-7 requests**, i.e. any instance of `Psr\Http\Message\RequestInterface`
 - **Laravel HTTP client requests**, i.e. any instance of `Illuminate\Http\Client\Request`
 - **Laravel HTTP client responses**, i.e. any instance of `Illuminate\Http\Client\Response`
+- **Laravel HTTP requests**, i.e. any instance of `Illuminate\Http\Request`
+- **Symfony requests**, i.e. any instance of `Symfony\Component\HttpFoundation\Request`
 - **user-defined sources**, i.e. any instance of `Cerbero\LazyJsonPages\Sources\Source`
 
 Here are some examples of sources:

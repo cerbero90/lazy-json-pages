@@ -17,27 +17,18 @@ class AnySource extends Source
      * @var class-string<Source>[]
      */
     protected array $supportedSources = [
-        // CustomSource::class,
+        CustomSource::class,
         Endpoint::class,
-        // LaravelClientRequest::class,
-        // LaravelClientResponse::class,
-        // LaravelRequest::class,
-        // Psr7Request::class,
-        // SymfonyRequest::class,
+        LaravelClientRequest::class,
+        LaravelClientResponse::class,
+        Psr7Request::class,
+        SymfonyRequest::class,
     ];
 
     /**
      * The matching source.
      */
     protected ?Source $matchingSource;
-
-    /**
-     * Determine whether this class can handle the source.
-     */
-    public function matches(): bool
-    {
-        return true;
-    }
 
     /**
      * Retrieve the HTTP request.

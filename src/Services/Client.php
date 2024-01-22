@@ -36,11 +36,13 @@ final class Client
     private static ?Guzzle $guzzle = null;
 
     /**
-     * Instantiate the class.
+     * Retrieve the Guzzle client instance.
      */
-    private function __construct()
+    public static function instance(): Guzzle
     {
-        // disable the constructor
+        return self::$guzzle ??= new Guzzle(
+            array_replace_recursive(self::$defaultOptions, self::$options),
+        );
     }
 
     /**
@@ -52,21 +54,19 @@ final class Client
     }
 
     /**
-     * Retrieve the Guzzle client instance.
-     */
-    public static function instance(): Guzzle
-    {
-        return self::$guzzle ??= new Guzzle(
-            array_replace_recursive(self::$defaultOptions, self::$options),
-        );
-    }
-
-    /**
      * Clean up the static values.
      */
     public static function reset(): void
     {
         self::$guzzle = null;
         self::$options = [];
+    }
+
+    /**
+     * Instantiate the class.
+     */
+    private function __construct()
+    {
+        // disable the constructor
     }
 }
