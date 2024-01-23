@@ -27,6 +27,6 @@ class TotalPagesAwarePagination extends LengthAwarePagination
      */
     public function getIterator(): Traversable
     {
-        yield from $this->yieldItemsUntilPage($this->config->totalPagesKey);
+        yield from $this->yieldItemsUntilKey($this->config->totalPagesKey);
     }
 }
