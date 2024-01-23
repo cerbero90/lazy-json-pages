@@ -29,6 +29,6 @@ class CustomSourceSample extends Source
      */
     public function response(): ResponseInterface
     {
-        return new Response(body: file_get_contents(fixture('totalPages/page1.json')));
+        return new Response(body: file_get_contents(fixture('lengthAware/page1.json')));
     }
 }
