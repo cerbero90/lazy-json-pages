@@ -104,9 +104,9 @@ final class LazyJsonPages
     /**
      * Set the total number of items.
      */
-    public function totalItems(Closure|string $totalItems): self
+    public function totalItems(string $key): self
     {
-        $this->config['totalItems'] = $this->integerFromResponse($totalItems);
+        $this->config['totalItemsKey'] = $key;
 
         return $this;
     }
@@ -209,7 +209,6 @@ final class LazyJsonPages
      */
     public function collect(string $dot = '*'): LazyCollection
     {
-        $this->config['dot'] = $dot;
         $this->config['pointer'] = DotsConverter::toPointer($dot);
 
         Client::configure($this->requestOptions);

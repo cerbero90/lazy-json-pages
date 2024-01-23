@@ -9,12 +9,11 @@ use Closure;
 final class Config
 {
     public function __construct(
-        public readonly string $dot = "*",
-        public readonly string $pointer = '',
+        public readonly string $pointer,
         public readonly string $pageName = 'page',
         public readonly int $firstPage = 1,
         public readonly ?string $totalPagesKey = null,
-        public readonly ?int $totalItems = null,
+        public readonly ?string $totalItemsKey = null,
         public readonly ?int $perPage = null,
         public readonly ?string $perPageKey = null,
         public readonly ?int $perPageOverride = null,
