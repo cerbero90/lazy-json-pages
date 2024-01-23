@@ -151,14 +151,6 @@ LazyJsonPages::from($source)->lastPage('X-Last-Page');
 
 APIs can expose their length information in the form of numbers (`total_pages: 10`) or URIs (`last_page: "https://example.com?page=10"`), Lazy JSON Pages supports both.
 
-To save more memory when setting the total number of items, we can also define the number of items shown in each page:
-
-```php
-LazyJsonPages::from($source)
-    ->totalItems('pagination.total_items')
-    ->perPage(20);
-```
-
 When dealing with a lot of data, it may be a good idea to fetch only 1 item on the first page and leverage the length information on that page to calculate the total number of pages/items without having to load all the other items of that page.
 
 We can do that by calling `perPage()` with:

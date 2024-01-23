@@ -24,7 +24,7 @@ class AnyPagination extends Pagination
         // LimitPagination::class,
         // LinkHeaderPagination::class,
         // OffsetPagination::class,
-        // TotalItemsAwarePagination::class,
+        TotalItemsAwarePagination::class,
         TotalPagesAwarePagination::class,
     ];
 
