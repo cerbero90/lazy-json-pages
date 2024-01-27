@@ -30,7 +30,7 @@ use GuzzleHttp\Psr7\Response;
 |
 */
 
-expect()->extend('toLoadItemsViaRequests', function (array $items, array $requests) {
+expect()->extend('toLoadItemsViaRequests', function (array $requests) {
     $responses = $transactions = $expectedUris = [];
 
     foreach ($requests as $uri => $fixture) {
@@ -44,7 +44,7 @@ expect()->extend('toLoadItemsViaRequests', function (array $items, array $reques
 
     Client::configure(['handler' => $stack]);
 
-    $this->sequence(...$items);
+    $this->sequence(...require fixture('items.php'));
 
     $actualUris = array_map(fn(array $transaction) => (string) $transaction['request']->getUri(), $transactions);
 
