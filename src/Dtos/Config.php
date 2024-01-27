@@ -11,6 +11,7 @@ final class Config
     public function __construct(
         public readonly string $pointer,
         public readonly string $pageName = 'page',
+        public readonly ?string $pageInPath = null,
         public readonly int $firstPage = 1,
         public readonly ?string $totalPagesKey = null,
         public readonly ?string $totalItemsKey = null,

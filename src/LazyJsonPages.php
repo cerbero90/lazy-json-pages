@@ -66,6 +66,16 @@ final class LazyJsonPages
     }
 
     /**
+     * Set the pattern to capture the page in the URI path.
+     */
+    public function pageInPath(string $pattern = '/(\d+)(?!.*\d)/'): self
+    {
+        $this->config['pageInPath'] = $pattern;
+
+        return $this;
+    }
+
+    /**
      * Set the number of the first page.
      */
     public function firstPage(int $page): self

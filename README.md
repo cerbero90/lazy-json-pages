@@ -109,10 +109,16 @@ If the API uses a query parameter different from `page` to specify the current p
 LazyJsonPages::from($source)->pageName('current_page');
 ```
 
-Otherwise, if the number of the current page is present in the URI path - for example `https://example.com/users/1` - we can chain the method `pageInPath()`:
+Otherwise, if the number of the current page is present in the URI path - for example `https://example.com/users/page/1` - we can chain the method `pageInPath()`:
 
 ```php
 LazyJsonPages::from($source)->pageInPath();
+```
+
+By default the last integer in the URI path is considered the page number. However we can customize the regular expression used to capture the page number, if need be:
+
+```php
+LazyJsonPages::from($source)->pageInPath('~/page/(\d+)$~');
 ```
 
 Some API paginations may start with a page different from `1`. If that's the case, we can define the first page by chaining the method `firstPage()`:

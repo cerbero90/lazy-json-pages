@@ -63,9 +63,7 @@ trait SendsAsyncRequests
         $pages = $this->book->pullFailedPages() ?: $pages;
 
         foreach ($pages as $page) {
-            $pageUri = Uri::withQueryValue($uri, $this->config->pageName, (string) $page);
-
-            yield $page => $request->withUri($pageUri);
+            yield $page => $request->withUri($this->uriForPage($uri, (string) $page));
         }
     }
 }
