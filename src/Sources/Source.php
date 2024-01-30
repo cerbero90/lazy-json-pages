@@ -24,6 +24,9 @@ abstract class Source
      */
     abstract public function response(): ResponseInterface;
 
+    /**
+     * Instantiate the class.
+     */
     final public function __construct(
         protected readonly mixed $source,
     ) {}
