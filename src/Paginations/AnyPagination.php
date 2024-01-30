@@ -19,22 +19,12 @@ class AnyPagination extends Pagination
      */
     protected array $supportedPaginations = [
         // CursorPagination::class,
-        // CustomPagination::class,
+        CustomPagination::class,
         // LastPageAwarePagination::class,
-        // LimitPagination::class,
         // LinkHeaderPagination::class,
-        // OffsetPagination::class,
         TotalItemsAwarePagination::class,
         TotalPagesAwarePagination::class,
     ];
-
-    /**
-     * Determine whether this pagination matches the configuration.
-     */
-    public function matches(): bool
-    {
-        return true;
-    }
 
     /**
      * Yield the paginated items.

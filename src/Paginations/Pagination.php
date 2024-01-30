@@ -33,21 +33,27 @@ abstract class Pagination implements IteratorAggregate
     protected readonly int $itemsPerPage;
 
     /**
-     * Determine whether the configuration matches this pagination.
-     */
-    abstract public function matches(): bool;
-
-    /**
      * Yield the paginated items.
      *
      * @return Traversable<int, mixed>
      */
     abstract public function getIterator(): Traversable;
 
+    /**
+     * Instantiate the class.
+     */
     final public function __construct(
         protected readonly Source $source,
         protected readonly Config $config,
     ) {
         $this->book = new Book();
+    }
+
+    /**
+     * Determine whether the configuration matches this pagination.
+     */
+    public function matches(): bool
+    {
+        return true;
     }
 }

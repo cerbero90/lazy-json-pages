@@ -164,6 +164,16 @@ final class LazyJsonPages
     }
 
     /**
+     * Set the custom pagination.
+     */
+    public function pagination(string $class): self
+    {
+        $this->config['pagination'] = $class;
+
+        return $this;
+    }
+
+    /**
      * Fetch pages synchronously.
      */
     public function sync(): self
