@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\LazyJsonPages\Services\Client;
 use Generator;
 use GuzzleHttp\Pool;
-use GuzzleHttp\Psr7\Uri;
 use Illuminate\Support\LazyCollection;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
