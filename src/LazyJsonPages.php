@@ -154,6 +154,16 @@ final class LazyJsonPages
     }
 
     /**
+     * Set the offset.
+     */
+    public function offset(string $key = 'offset'): self
+    {
+        $this->config['offsetKey'] = $key;
+
+        return $this;
+    }
+
+    /**
      * Fetch pages synchronously.
      */
     public function sync(): self

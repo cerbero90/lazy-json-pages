@@ -28,6 +28,11 @@ abstract class Pagination implements IteratorAggregate
     public readonly Book $book;
 
     /**
+     * The number of items per page.
+     */
+    protected readonly int $itemsPerPage;
+
+    /**
      * Determine whether the configuration matches this pagination.
      */
     abstract public function matches(): bool;

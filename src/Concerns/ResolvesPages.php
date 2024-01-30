@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\LazyJsonPages\Exceptions\InvalidPageInPathException;
@@ -49,6 +51,10 @@ trait ResolvesPages
      */
     protected function uriForPage(UriInterface $uri, string $page): UriInterface
     {
+        if ($key = $this->config->offsetKey) {
+            return Uri::withQueryValue($uri, $key, strval(($page - $this->config->firstPage) * $this->itemsPerPage));
+        }
+
         if (!$pattern = $this->config->pageInPath) {
             return Uri::withQueryValue($uri, $this->config->pageName, $page);
         }
@@ -57,6 +63,6 @@ trait ResolvesPages
             throw new InvalidPageInPathException($path, $pattern);
         }
 
-        return $uri->withPath(substr_replace($path, $page, $matches[1][1], strlen($matches[1][0])));
+        return $uri->withPath(substr_replace($path, $page, (int) $matches[1][1], strlen($matches[1][0])));
     }
 }

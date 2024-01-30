@@ -29,19 +29,13 @@ class TotalItemsAwarePagination extends LengthAwarePagination
      */
     public function getIterator(): Traversable
     {
-        $perPage = 0;
-        $generator = $this->yieldItemsAndReturnKey($this->source->response(), $this->config->totalItemsKey);
-
-        foreach ($generator as $item) {
-            yield $item;
-            ++$perPage;
-        }
+        yield from $generator = $this->yieldItemsAndReturnKey($this->source->response(), $this->config->totalItemsKey);
 
         if (!is_numeric($totalItems = $generator->getReturn())) {
             throw new InvalidKeyException($this->config->totalItemsKey);
         }
 
-        $totalPages = $perPage > 0 ? (int) ceil(intval($totalItems) / $perPage) : 0;
+        $totalPages = $this->itemsPerPage > 0 ? (int) ceil(intval($totalItems) / $this->itemsPerPage) : 0;
 
         yield from $this->yieldItemsUntilPage($totalPages);
     }

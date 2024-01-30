@@ -21,6 +21,7 @@ final class Config
         public readonly ?Closure $nextPage = null,
         public readonly ?string $nextPageKey = null,
         public readonly ?int $lastPage = null,
+        public readonly ?string $offsetKey = null,
         public readonly int $async = 3,
         public readonly int $attempts = 3,
         public readonly ?Closure $backoff = null,

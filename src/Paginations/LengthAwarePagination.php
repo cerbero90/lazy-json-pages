@@ -9,7 +9,6 @@ use Cerbero\LazyJsonPages\Exceptions\InvalidKeyException;
 use Closure;
 use Generator;
 use Illuminate\Support\LazyCollection;
-use Psr\Http\Message\UriInterface;
 
 /**
  * The abstract implementation of a pagination that is aware of its length.
@@ -44,11 +43,10 @@ abstract class LengthAwarePagination extends Pagination
      *
      * @return Generator<int, mixed>
      */
-    protected function yieldItemsUntilPage(int $page, ?UriInterface $uri = null): Generator
+    protected function yieldItemsUntilPage(int $page): Generator
     {
-        $uri ??= $this->source->request()->getUri();
-        $firstPageAlreadyFetched = strval($uri) == strval($this->source->request()->getUri());
-        $chunkedPages = $this->chunkPages($page, $firstPageAlreadyFetched);
+        $uri = $this->source->request()->getUri();
+        $chunkedPages = $this->chunkPages($page);
 
         foreach ($this->fetchPagesAsynchronously($chunkedPages, $uri) as $page) {
             yield from $this->yieldItemsFrom($page);
@@ -60,15 +58,13 @@ abstract class LengthAwarePagination extends Pagination
      *
      * @return LazyCollection<int, LazyCollection<int, int>>
      */
-    protected function chunkPages(int $pages, bool $shouldSkipFirstPage): LazyCollection
+    protected function chunkPages(int $pages): LazyCollection
     {
-        if ($pages == 0 || ($pages == 1 && $shouldSkipFirstPage)) {
-            return LazyCollection::empty();
-        }
-
-        $firstPage = $shouldSkipFirstPage ? $this->config->firstPage + 1 : $this->config->firstPage;
+        $firstPage = $this->config->firstPage + 1;
         $lastPage = $this->config->firstPage == 0 ? $pages - 1 : $pages;
 
-        return LazyCollection::range($firstPage, $lastPage)->chunk($this->config->async);
+        return $firstPage > $lastPage
+            ? LazyCollection::empty()
+            : LazyCollection::range($firstPage, $lastPage)->chunk($this->config->async);
     }
 }

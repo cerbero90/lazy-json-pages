@@ -68,7 +68,6 @@ The variable `$source` in our examples represents any [source](#-sources) that p
 ```php
 $lazyCollection = LazyJsonPages::from($source)
     ->totalItems('pagination.total_items')
-    ->perPage(20)
     ->offset()
     ->collect('results.*');
 ```
@@ -157,44 +156,18 @@ LazyJsonPages::from($source)->lastPage('X-Last-Page');
 
 APIs can expose their length information in the form of numbers (`total_pages: 10`) or URIs (`last_page: "https://example.com?page=10"`), Lazy JSON Pages supports both.
 
-When dealing with a lot of data, it may be a good idea to fetch only 1 item on the first page and leverage the length information on that page to calculate the total number of pages/items without having to load all the other items of that page.
-
-We can do that by calling `perPage()` with:
-- the number of items that we want to show per page (we can also override the pagination default)
-- the query parameter or header that holds the number of items per page
+If the pagination works with an offset, we can configure it with the `offset()` method. The value of the offset will be calculated based on the number of items present on the first page:
 
 ```php
-// indicate that the number of items per page is defined by the `limit` query parameter, e.g. ?limit=50
+// indicate that the offset is defined by the `offset` query parameter, e.g. ?offset=50
 LazyJsonPages::from($source)
     ->totalItems('pagination.total_items')
-    ->perPage(30, 'limit');
+    ->offset();
 
-// indicate that the number of items per page is defined by the `X-Limit` header
+// indicate that the offset is defined by the `skip` query parameter, e.g. ?skip=50
 LazyJsonPages::from($source)
     ->totalItems('pagination.total_items')
-    ->perPage(30, header: 'X-Limit');
-```
-
-Some APIs may not allow to request only 1 item per page, in these cases we can specify how many items should be loaded on the first page as third argument:
-
-```php
-LazyJsonPages::from($source)
-    ->totalItems('pagination.total_items')
-    ->perPage(30, 'limit', 5);
-
-LazyJsonPages::from($source)
-    ->totalItems('pagination.total_items')
-    ->perPage(30, header: 'X-Limit', firstPageItems: 5);
-```
-
-We can leverage the `perPage()` strategy with all the length-aware methods seen before:
-
-```php
-LazyJsonPages::from($source)->totalPages('pagination.total_pages')->perPage(30, 'limit');
-
-LazyJsonPages::from($source)->totalItems('pagination.total_items')->perPage(30, 'limit');
-
-LazyJsonPages::from($source)->lastPage('pagination.last_page')->perPage(30, 'limit');
+    ->offset('skip');
 ```
 
 

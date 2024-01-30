@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\JsonParser\JsonParser;
@@ -19,6 +21,7 @@ trait YieldsPaginatedItems
      */
     protected function yieldItemsAndReturnKey(ResponseInterface $response, string $key): Generator
     {
+        $itemsPerPage = 0;
         $pointers = [$this->config->pointer];
 
         if (($value = $response->getHeaderLine($key)) === '') {
@@ -30,8 +33,11 @@ trait YieldsPaginatedItems
                 $value = $item->value;
             } else {
                 yield $item;
+                ++$itemsPerPage;
             }
         }
+
+        $this->itemsPerPage ??= $itemsPerPage;
 
         return $value;
     }
