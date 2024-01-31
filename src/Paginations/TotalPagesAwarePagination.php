@@ -16,8 +16,7 @@ class TotalPagesAwarePagination extends LengthAwarePagination
      */
     public function matches(): bool
     {
-        return $this->config->totalPagesKey !== null
-            && $this->config->perPage === null;
+        return $this->config->totalPagesKey !== null;
     }
 
     /**
