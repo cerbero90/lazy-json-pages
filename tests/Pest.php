@@ -32,9 +32,14 @@ use GuzzleHttp\Psr7\Response;
 
 expect()->extend('toLoadItemsViaRequests', function (array $requests) {
     $responses = $transactions = $expectedUris = [];
+    $headers = [
+        'X-Total-Pages' => 3,
+        'X-Total-Items' => 14,
+    ];
 
     foreach ($requests as $uri => $fixture) {
-        $responses[] = new Response(body: file_get_contents(fixture($fixture)));
+        $headers['X-Last-Page'] ??= str_contains($fixture, 'page0') ? 2 : 3;
+        $responses[] = new Response(body: file_get_contents(fixture($fixture)), headers: $headers);
         $expectedUris[] = $uri;
     }
 
