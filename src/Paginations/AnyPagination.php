@@ -20,7 +20,7 @@ class AnyPagination extends Pagination
     protected array $supportedPaginations = [
         // CursorPagination::class,
         CustomPagination::class,
-        // LastPageAwarePagination::class,
+        LastPageAwarePagination::class,
         // LinkHeaderPagination::class,
         TotalItemsAwarePagination::class,
         TotalPagesAwarePagination::class,

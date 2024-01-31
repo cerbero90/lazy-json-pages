@@ -19,7 +19,7 @@ class TotalItemsAwarePagination extends LengthAwarePagination
     {
         return $this->config->totalItemsKey !== null
             && $this->config->totalPagesKey === null
-            && $this->config->perPage === null;
+            && $this->config->lastPageKey === null;
     }
 
     /**

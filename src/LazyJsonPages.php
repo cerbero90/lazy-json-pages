@@ -146,9 +146,9 @@ final class LazyJsonPages
     /**
      * Set the number of the last page.
      */
-    public function lastPage(Closure|string $key): self
+    public function lastPage(string $key): self
     {
-        $this->config['lastPage'] = $this->integerFromResponse($key);
+        $this->config['lastPageKey'] = $key;
 
         return $this;
     }

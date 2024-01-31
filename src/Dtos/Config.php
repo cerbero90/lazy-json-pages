@@ -29,7 +29,7 @@ final class Config
         public readonly ?int $perPageOverride = null,
         public readonly ?Closure $nextPage = null,
         public readonly ?string $nextPageKey = null,
-        public readonly ?int $lastPage = null,
+        public readonly ?string $lastPageKey = null,
         public readonly ?string $offsetKey = null,
         public readonly ?string $pagination = null,
         public readonly int $async = 3,
