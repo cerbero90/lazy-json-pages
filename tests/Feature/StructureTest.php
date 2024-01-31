@@ -53,6 +53,20 @@ it('supports paginations with offset', function () {
     ]);
 });
 
+it('supports paginations with offset and 0 as first page', function () {
+    $lazyCollection = LazyJsonPages::from('https://example.com/api/v1/users')
+        ->offset()
+        ->firstPage(0)
+        ->totalPages('meta.total_pages')
+        ->collect('data.*');
+
+    expect($lazyCollection)->toLoadItemsViaRequests([
+        'https://example.com/api/v1/users' => 'lengthAwareFirstPage0/page0.json',
+        'https://example.com/api/v1/users?offset=5' => 'lengthAwareFirstPage0/page1.json',
+        'https://example.com/api/v1/users?offset=10' => 'lengthAwareFirstPage0/page2.json',
+    ]);
+});
+
 it('supports paginations with limit and offset', function () {
     $lazyCollection = LazyJsonPages::from('https://example.com/api/v1/users?limit=5')
         ->offset()
