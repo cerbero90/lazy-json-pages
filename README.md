@@ -152,6 +152,10 @@ If the length information is nested in the JSON body, we can use dot-notation to
 Otherwise, if the length information is displayed in the headers, we can use the same methods to gather it by simply defining the name of the header:
 
 ```php
+LazyJsonPages::from($source)->totalPages('X-Total-Pages');
+
+LazyJsonPages::from($source)->totalItems('X-Total-Items');
+
 LazyJsonPages::from($source)->lastPage('X-Last-Page');
 ```
 
