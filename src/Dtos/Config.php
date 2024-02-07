@@ -18,17 +18,13 @@ final class Config
      * Instantiate the class.
      */
     public function __construct(
-        public readonly string $pointer,
+        public readonly string $itemsPointer,
         public readonly string $pageName = 'page',
-        public readonly ?string $pageInPath = null,
         public readonly int $firstPage = 1,
+        public readonly ?string $pageInPath = null,
         public readonly ?string $totalPagesKey = null,
         public readonly ?string $totalItemsKey = null,
-        public readonly ?int $perPage = null,
-        public readonly ?string $perPageKey = null,
-        public readonly ?int $perPageOverride = null,
-        public readonly ?Closure $nextPage = null,
-        public readonly ?string $nextPageKey = null,
+        public readonly ?string $cursorKey = null,
         public readonly ?string $lastPageKey = null,
         public readonly ?string $offsetKey = null,
         public readonly ?string $pagination = null,

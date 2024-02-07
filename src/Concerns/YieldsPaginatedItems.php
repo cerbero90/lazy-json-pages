@@ -22,7 +22,7 @@ trait YieldsPaginatedItems
     protected function yieldItemsAndReturnKey(ResponseInterface $response, string $key): Generator
     {
         $itemsPerPage = 0;
-        $pointers = [$this->config->pointer];
+        $pointers = [$this->config->itemsPointer];
 
         if (($value = $response->getHeaderLine($key)) === '') {
             $pointers[DotsConverter::toPointer($key)] = fn(mixed $value) => (object) compact('value');
@@ -49,6 +49,6 @@ trait YieldsPaginatedItems
      */
     protected function yieldItemsFrom(mixed $source): Generator
     {
-        yield from JsonParser::parse($source)->pointer($this->config->pointer);
+        yield from JsonParser::parse($source)->pointer($this->config->itemsPointer);
     }
 }
