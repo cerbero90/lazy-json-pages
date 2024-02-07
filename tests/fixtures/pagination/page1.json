@@ -19,6 +19,7 @@
     "meta": {
         "total_pages": 3,
         "total_items": 14,
-        "last_page": 3
+        "last_page": 3,
+        "cursor": "cursor1"
     }
 }

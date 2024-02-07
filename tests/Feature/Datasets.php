@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 dataset('sources', function () {
     $uri = 'https://example.com/api/v1/users';
     $psr7Request = new Psr7Request('GET', $uri);
-    $psr7Response = new Psr7Response(body: file_get_contents(fixture('lengthAware/page1.json')));
+    $psr7Response = new Psr7Response(body: file_get_contents(fixture('pagination/page1.json')));
     $laravelClientResponse = new LaravelClientResponse($psr7Response);
     $laravelClientResponse->transferStats = new TransferStats($psr7Request, $psr7Response);
 
