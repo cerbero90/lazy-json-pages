@@ -39,7 +39,7 @@ composer require cerbero/lazy-json-pages
 * [💧 Sources](#-sources)
 * [🏛️ Pagination structure](#%EF%B8%8F-pagination-structure)
 * [📏 Length-aware paginations](#-length-aware-paginations)
-* [↪️ Cursor-aware paginations](#%EF%B8%8F-cursor-and-next-page-paginations)
+* [↪️ Cursor-aware paginations](#%EF%B8%8F-cursor-aware-paginations)
 * [👽 Custom pagination](#-custom-pagination)
 * [🚀 Requests optimization](#-requests-optimization)
 * [💢 Errors handling](#-errors-handling)
