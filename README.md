@@ -39,7 +39,7 @@ composer require cerbero/lazy-json-pages
 * [💧 Sources](#-sources)
 * [🏛️ Pagination structure](#%EF%B8%8F-pagination-structure)
 * [📏 Length-aware paginations](#-length-aware-paginations)
-* [↪️ Cursor and next-page paginations](#%EF%B8%8F-cursor-and-next-page-paginations)
+* [↪️ Cursor-aware paginations](#%EF%B8%8F-cursor-and-next-page-paginations)
 * [👽 Custom pagination](#-custom-pagination)
 * [🚀 Requests optimization](#-requests-optimization)
 * [💢 Errors handling](#-errors-handling)
@@ -176,10 +176,17 @@ LazyJsonPages::from($source)
 ```
 
 
-### ↪️ Cursor and next-page paginations
+### ↪️ Cursor-aware paginations
 
-> [!WARNING]
-> The documentation of this feature is a work in progress.
+Not all paginations are [length-aware](#-length-aware-paginations), some may be built in a way where each page has a cursor pointing to the next page.
+
+We can tackle this kind of pagination by indicating the key or the header holding the cursor:
+
+```php
+LazyJsonPages::from($source)->cursor('pagination.cursor');
+```
+
+The cursor may be a number, a string or a URI: Lazy JSON Pages supports them all.
 
 
 ### 👽 Custom pagination
