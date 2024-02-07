@@ -184,6 +184,8 @@ We can tackle this kind of pagination by indicating the key or the header holdin
 
 ```php
 LazyJsonPages::from($source)->cursor('pagination.cursor');
+
+LazyJsonPages::from($source)->cursor('X-Cursor');
 ```
 
 The cursor may be a number, a string or a URI: Lazy JSON Pages supports them all.
