@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Concerns;
 
+use Cerbero\JsonParser\Concerns\DetectsEndpoints;
 use Cerbero\LazyJsonPages\Exceptions\InvalidPageInPathException;
 use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\UriInterface;
@@ -13,6 +14,8 @@ use Psr\Http\Message\UriInterface;
  */
 trait ResolvesPages
 {
+    use DetectsEndpoints;
+
     /**
      * Retrieve the page out of the given value.
      *
@@ -23,8 +26,8 @@ trait ResolvesPages
         return match (true) {
             is_numeric($value) => (int) $value,
             !is_string($value) || $value === '' => null,
-            !$parsedUri = parse_url($value) => $onlyNumerics ? null : $value,
-            default => $this->pageFromParsedUri($parsedUri, $onlyNumerics),
+            !$this->isEndpoint($value) => $onlyNumerics ? null : $value,
+            default => $this->pageFromParsedUri(parse_url($value), $onlyNumerics),
         };
     }
 
