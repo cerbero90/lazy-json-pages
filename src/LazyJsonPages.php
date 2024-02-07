@@ -96,22 +96,6 @@ final class LazyJsonPages
     }
 
     /**
-     * Retrieve an integer from the response.
-     */
-    private function integerFromResponse(Closure|string $key, int $minimum = 0): int
-    {
-        return (int) max($minimum, $this->valueFromResponse($key));
-    }
-
-    /**
-     * Retrieve a value from the response.
-     */
-    private function valueFromResponse(Closure|string $key): mixed
-    {
-        return $key instanceof Closure ? $key($this->source->response()) : $this->source->response($key);
-    }
-
-    /**
      * Set the total number of items.
      */
     public function totalItems(string $key): self
@@ -122,23 +106,11 @@ final class LazyJsonPages
     }
 
     /**
-     * Set the number of items per page and optionally override it.
+     * Set the cursor or next page.
      */
-    public function perPage(int $items, ?string $key = null, int $firstPageItems = 1): self
+    public function cursor(string $key): self
     {
-        $this->config['perPage'] = max(1, $key ? $firstPageItems : $items);
-        $this->config['perPageKey'] = $key;
-        $this->config['perPageOverride'] = $key ? max(1, $items) : null;
-
-        return $this;
-    }
-
-    /**
-     * Set the next page.
-     */
-    public function nextPage(Closure|string $key): self
-    {
-        $this->config['nextPage'] = $this->valueFromResponse($key);
+        $this->config['cursorKey'] = $key;
 
         return $this;
     }
@@ -236,23 +208,20 @@ final class LazyJsonPages
      * Retrieve a lazy collection yielding the paginated items.
      *
      * @return LazyCollection<int, mixed>
+     * @throws UnsupportedPaginationException
      */
     public function collect(string $dot = '*'): LazyCollection
     {
-        $this->config['pointer'] = DotsConverter::toPointer($dot);
-
         Client::configure($this->requestOptions);
 
-        return new LazyCollection(function () {
-            $items = new AnyPagination($this->source, new Config(...$this->config));
+        $config = new Config(...$this->config, itemsPointer: DotsConverter::toPointer($dot));
 
-            // yield each item within a loop - instead of using `yield from` - to ignore the actual item index
-            // and ensure indexes continuity, otherwise the index of items always starts from 0 on every page.
-            foreach ($items as $item) {
-                yield $item;
+        return new LazyCollection(function () use ($config) {
+            try {
+                yield from new AnyPagination($this->source, $config);
+            } finally {
+                Client::reset();
             }
-
-            Client::reset();
         });
     }
 }

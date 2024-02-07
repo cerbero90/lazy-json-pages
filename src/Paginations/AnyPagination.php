@@ -18,7 +18,7 @@ class AnyPagination extends Pagination
      * @var class-string<Pagination>[]
      */
     protected array $supportedPaginations = [
-        // CursorPagination::class,
+        CursorPagination::class,
         CustomPagination::class,
         LastPageAwarePagination::class,
         // LinkHeaderPagination::class,
@@ -30,8 +30,21 @@ class AnyPagination extends Pagination
      * Yield the paginated items.
      *
      * @return Traversable<int, mixed>
+     * @throws UnsupportedPaginationException
      */
     public function getIterator(): Traversable
+    {
+        // yield only items and not their related index to ensure indexes continuity
+        // otherwise the actual indexes always start from 0 on every page.
+        foreach ($this->matchingPagination() as $item) {
+            yield $item;
+        }
+    }
+
+    /**
+     * Retrieve the pagination matching with the configuration.
+     */
+    protected function matchingPagination(): Pagination
     {
         foreach ($this->supportedPaginations as $class) {
             $pagination = new $class($this->source, $this->config);
