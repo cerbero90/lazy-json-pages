@@ -49,11 +49,7 @@ expect()->extend('toLoadItemsViaRequests', function (array $requests) {
 
     Client::configure(['handler' => $stack]);
 
-    try {
-        $this->sequence(...require fixture('items.php'));
-    } finally {
-        Client::reset();
-    }
+    $this->sequence(...require fixture('items.php'));
 
     $actualUris = array_map(fn(array $transaction) => (string) $transaction['request']->getUri(), $transactions);
 
