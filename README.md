@@ -44,6 +44,7 @@ composer require cerbero/lazy-json-pages
 * [👽 Custom paginations](#-custom-paginations)
 * [🚀 Requests optimization](#-requests-optimization)
 * [💢 Errors handling](#-errors-handling)
+* [🤝 Laravel integration](#-laravel-integration)
 
 
 ### 👣 Basics
@@ -287,6 +288,17 @@ If you find yourself implementing the same custom pagination in different projec
 
 > [!WARNING]
 > The documentation of this feature is a work in progress.
+
+
+### 🤝 Laravel integration
+
+If used in a [Laravel](https://laravel.com) project, Lazy JSON Pages automatically fires events when:
+- an HTTP request is about to be sent, by firing `Illuminate\Http\Client\Events\RequestSending`
+- an HTTP response is received, by firing `Illuminate\Http\Client\Events\ResponseReceived`
+- a connection failed, by firing `Illuminate\Http\Client\Events\ConnectionFailed`
+
+This is especially handy for debugging tools like [Laravel Telescope](https://laravel.com/docs/telescope) or [Spatie Ray](https://spatie.be/docs/ray/installation-in-your-project/laravel) or for triggering the related event listeners.
+
 
 ## 📆 Change log
 
