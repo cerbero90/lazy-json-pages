@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Paginations;
 
+use Cerbero\LazyJsonPages\Concerns\YieldsItemsByLength;
 use Traversable;
 
 /**
  * The pagination aware of the total number of pages.
  */
-class TotalPagesAwarePagination extends LengthAwarePagination
+class TotalPagesAwarePagination extends Pagination
 {
+    use YieldsItemsByLength;
+
     /**
      * Determine whether the configuration matches this pagination.
      */

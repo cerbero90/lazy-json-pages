@@ -10,16 +10,21 @@ use Generator;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * The trait to yield paginated items.
+ * The trait to parse pages.
  */
-trait YieldsPaginatedItems
+trait ParsesPages
 {
+    /**
+     * The number of items per page.
+     */
+    protected readonly int $itemsPerPage;
+
     /**
      * Yield paginated items and the given key from the provided response.
      *
      * @return Generator<int, mixed>
      */
-    protected function yieldItemsAndReturnKey(ResponseInterface $response, string $key): Generator
+    protected function yieldItemsAndGetKey(ResponseInterface $response, string $key): Generator
     {
         $itemsPerPage = 0;
         $pointers = [$this->config->itemsPointer];

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Paginations;
 
-use Cerbero\LazyJsonPages\Services\Client;
+use Cerbero\LazyJsonPages\Concerns\YieldsItemsByCursor;
+use Psr\Http\Message\ResponseInterface;
 use Traversable;
 
 /**
  * The pagination aware of the cursor of the next page.
  */
-class CursorPagination extends Pagination
+class CursorAwarePagination extends Pagination
 {
+    use YieldsItemsByCursor;
+
     /**
      * Determine whether the configuration matches this pagination.
      */
@@ -30,15 +33,10 @@ class CursorPagination extends Pagination
      */
     public function getIterator(): Traversable
     {
-        yield from $generator = $this->yieldItemsAndReturnKey($this->source->response(), $this->config->cursorKey);
+        yield from $this->yieldItemsByCursor(function(ResponseInterface $response) {
+            yield from $generator = $this->yieldItemsAndGetKey($response, $this->config->cursorKey);
 
-        $request = clone $this->source->request();
-
-        while ($cursor = $this->toPage($generator->getReturn(), onlyNumerics: false)) {
-            $uri = $this->uriForPage($request->getUri(), (string) $cursor);
-            $response = Client::instance()->send($request->withUri($uri));
-
-            yield from $generator = $this->yieldItemsAndReturnKey($response, $this->config->cursorKey);
-        }
+            return $generator->getReturn();
+        });
     }
 }

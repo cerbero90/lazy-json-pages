@@ -2,51 +2,52 @@
 
 declare(strict_types=1);
 
-namespace Cerbero\LazyJsonPages\Paginations;
+namespace Cerbero\LazyJsonPages\Concerns;
 
-use Cerbero\LazyJsonPages\Concerns\SendsAsyncRequests;
 use Cerbero\LazyJsonPages\Exceptions\InvalidKeyException;
 use Closure;
 use Generator;
 use Illuminate\Support\LazyCollection;
+use Psr\Http\Message\ResponseInterface;
 
 /**
- * The abstract implementation of a pagination that is aware of its length.
+ * The trait to yield items from length-aware paginations.
  */
-abstract class LengthAwarePagination extends Pagination
+trait YieldsItemsByLength
 {
     use SendsAsyncRequests;
 
     /**
      * Yield paginated items until the page resolved from the given key is reached.
      *
-     * @param (Closure(int): int)|null $callback
+     * @param (Closure(int): int) $callback
      * @return Generator<int, mixed>
      */
-    protected function yieldItemsUntilKey(string $key, ?Closure $callback = null): Generator
+    protected function yieldItemsUntilKey(string $key, Closure $callback = null): Generator
     {
-        yield from $generator = $this->yieldItemsAndReturnKey($this->source->response(), $key);
+        yield from $this->yieldItemsUntilPage(function(ResponseInterface $response) use ($key, $callback) {
+            yield from $generator = $this->yieldItemsAndGetKey($response, $key);
 
-        $page = $this->toPage($generator->getReturn());
+            if (!is_int($page = $this->toPage($generator->getReturn()))) {
+                throw new InvalidKeyException($key);
+            }
 
-        if (!is_int($page)) {
-            throw new InvalidKeyException($key);
-        }
-
-        $page = $callback ? $callback($page) : $page;
-
-        yield from $this->yieldItemsUntilPage($page);
+            return $callback ? $callback($page) : $page;
+        });
     }
 
     /**
-     * Yield paginated items until the given page is reached.
+     * Yield paginated items until the resolved page is reached.
      *
+     * @param (Closure(ResponseInterface): Generator<int, mixed>) $callback
      * @return Generator<int, mixed>
      */
-    protected function yieldItemsUntilPage(int $page): Generator
+    protected function yieldItemsUntilPage(Closure $callback): Generator
     {
+        yield from $generator = $callback($this->source->pullResponse());
+
         $uri = $this->source->request()->getUri();
-        $chunkedPages = $this->chunkPages($page);
+        $chunkedPages = $this->chunkPages($generator->getReturn());
 
         foreach ($this->fetchPagesAsynchronously($chunkedPages, $uri) as $page) {
             yield from $this->yieldItemsFrom($page);

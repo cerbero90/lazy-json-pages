@@ -10,7 +10,7 @@ use Traversable;
 /**
  * The user-defined pagination.
  */
-class CustomPagination extends LengthAwarePagination
+class CustomPagination extends Pagination
 {
     /**
      * Determine whether the configuration matches this pagination.
