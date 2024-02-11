@@ -53,7 +53,7 @@ it('supports paginations with offset', function () {
     ]);
 });
 
-it('supports paginations with offset and 0 as first page', function () {
+it('supports paginations with offset having 0 as first page', function () {
     $lazyCollection = LazyJsonPages::from('https://example.com/api/v1/users')
         ->offset()
         ->firstPage(0)
