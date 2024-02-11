@@ -28,7 +28,12 @@ class AnySource extends Source
     /**
      * The matching source.
      */
-    protected ?Source $matchingSource;
+    protected readonly Source $matchingSource;
+
+    /**
+     * The cached HTTP response.
+     */
+    protected ?ResponseInterface $response;
 
     /**
      * Retrieve the HTTP request.
@@ -67,6 +72,18 @@ class AnySource extends Source
      */
     public function response(): ResponseInterface
     {
-        return $this->matchingSource()->response();
+        return $this->response ??= $this->matchingSource()->response();
+    }
+
+    /**
+     * Retrieve the HTTP response and forget it to save memory.
+     */
+    public function pullResponse(): ResponseInterface
+    {
+        $response = $this->response();
+
+        $this->response = null;
+
+        return $response;
     }
 }

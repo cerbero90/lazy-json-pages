@@ -21,16 +21,6 @@ class Endpoint extends Source
     use DetectsEndpoints;
 
     /**
-     * The HTTP request.
-     */
-    protected readonly RequestInterface $request;
-
-    /**
-     * The HTTP response value object
-     */
-    protected readonly ResponseInterface $response;
-
-    /**
      * Determine whether this class can handle the source.
      */
     public function matches(): bool
@@ -44,7 +34,7 @@ class Endpoint extends Source
      */
     public function request(): RequestInterface
     {
-        return $this->request ??= new Request('GET', $this->source);
+        return new Request('GET', $this->source);
     }
 
     /**
@@ -54,6 +44,6 @@ class Endpoint extends Source
      */
     public function response(): ResponseInterface
     {
-        return $this->response ??= Client::instance()->send($this->request());
+        return Client::instance()->send($this->request());
     }
 }
