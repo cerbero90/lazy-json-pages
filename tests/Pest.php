@@ -1,10 +1,14 @@
 <?php
 
 use Cerbero\LazyJsonPages\Services\Client;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Orchestra\Testbench\Concerns\WithWorkbench;
+use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +21,7 @@ use GuzzleHttp\Psr7\Response;
 |
 */
 
-// uses(Tests\TestCase::class)->in('Feature');
+uses(OrchestraTestCase::class, WithWorkbench::class)->in('Integration/LaravelTest.php');
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +59,27 @@ expect()->extend('toLoadItemsViaRequests', function (array $requests, Generator|
     $actualUris = array_map(fn(array $transaction) => (string) $transaction['request']->getUri(), $transactions);
 
     expect($actualUris)->toBe($expectedUris);
+});
+
+expect()->extend('toFailRequest', function (string $uri) {
+    $transactions = [];
+
+    $responses = [$exception = new RequestException('connection failed', new Request('GET', $uri))];
+
+    $stack = HandlerStack::create(new MockHandler($responses));
+
+    $stack->push(Middleware::history($transactions));
+
+    Client::configure(['handler' => $stack]);
+
+    try {
+        iterator_to_array($this->value);
+    } catch (Throwable $e) {
+        expect($e)->toBe($exception);
+    }
+
+    expect($transactions)->toHaveCount(1);
+    expect((string) $transactions[0]['request']->getUri())->toBe($uri);
 });
 
 /*
