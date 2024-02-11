@@ -31,6 +31,7 @@ dataset('length-aware', function () {
     yield 'total pages aware' => fn(LazyJsonPages $instance) => $instance->totalPages('meta.total_pages');
     yield 'total items aware' => fn(LazyJsonPages $instance) => $instance->totalItems('meta.total_items');
     yield 'last page aware' => fn(LazyJsonPages $instance) => $instance->lastPage('meta.last_page');
+    yield 'link header' => fn(LazyJsonPages $instance) => $instance->linkHeader();
     yield 'custom pagination' => fn(LazyJsonPages $instance) => $instance->pagination(TotalPagesAwarePagination::class)->totalPages('meta.total_pages');
     yield 'total pages aware by header' => fn(LazyJsonPages $instance) => $instance->totalPages('X-Total-Pages');
     yield 'total items aware by header' => fn(LazyJsonPages $instance) => $instance->totalItems('X-Total-Items');

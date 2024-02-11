@@ -136,6 +136,16 @@ final class LazyJsonPages
     }
 
     /**
+     * Set the Link header pagination.
+     */
+    public function linkHeader(): self
+    {
+        $this->config['hasLinkHeader'] = true;
+
+        return $this;
+    }
+
+    /**
      * Set the custom pagination.
      */
     public function pagination(string $class): self
@@ -216,7 +226,7 @@ final class LazyJsonPages
 
         $config = new Config(...$this->config, itemsPointer: DotsConverter::toPointer($dot));
 
-        return new LazyCollection(function () use ($config) {
+        return new LazyCollection(function() use ($config) {
             try {
                 yield from new AnyPagination($this->source, $config);
             } finally {

@@ -27,6 +27,7 @@ final class Config
         public readonly ?string $cursorKey = null,
         public readonly ?string $lastPageKey = null,
         public readonly ?string $offsetKey = null,
+        public readonly bool $hasLinkHeader = false,
         public readonly ?string $pagination = null,
         public readonly int $async = 3,
         public readonly int $attempts = 3,

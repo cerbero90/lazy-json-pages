@@ -18,10 +18,10 @@ class AnyPagination extends Pagination
      * @var class-string<Pagination>[]
      */
     protected array $supportedPaginations = [
-        CursorPagination::class,
+        CursorAwarePagination::class,
         CustomPagination::class,
         LastPageAwarePagination::class,
-        // LinkHeaderPagination::class,
+        LinkHeaderAwarePagination::class,
         TotalItemsAwarePagination::class,
         TotalPagesAwarePagination::class,
     ];

@@ -30,16 +30,17 @@ use GuzzleHttp\Psr7\Response;
 |
 */
 
-expect()->extend('toLoadItemsViaRequests', function (array $requests) {
+expect()->extend('toLoadItemsViaRequests', function (array $requests, Generator|array $headers = []) {
     $responses = $transactions = $expectedUris = [];
-    $headers = [
-        'X-Total-Pages' => 3,
-        'X-Total-Items' => 14,
-    ];
+    $responseHeaders = $headers;
 
     foreach ($requests as $uri => $fixture) {
-        $headers['X-Last-Page'] ??= str_contains($fixture, 'page0') ? 2 : 3;
-        $responses[] = new Response(body: file_get_contents(fixture($fixture)), headers: $headers);
+        if ($headers instanceof Generator) {
+            $responseHeaders = $headers->current();
+            $headers->valid() && $headers->next();
+        }
+
+        $responses[] = new Response(body: file_get_contents(fixture($fixture)), headers: $responseHeaders);
         $expectedUris[] = $uri;
     }
 
