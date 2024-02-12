@@ -22,6 +22,7 @@ Framework-agnostic package to load items from any paginated JSON API into a [Lar
 
 > [!TIP]
 > Need to read large JSON with no pagination in a memory-efficient way?
+>
 > Consider using [🐼 Lazy JSON](https://github.com/cerbero90/lazy-json) or [🧩 JSON Parser](https://github.com/cerbero90/json-parser) instead.
 
 
