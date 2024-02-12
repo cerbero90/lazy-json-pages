@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Sources;
 
-use Cerbero\LazyJsonPages\Services\Client;
 use GuzzleHttp\Psr7\Request as Psr7Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -45,6 +44,6 @@ class SymfonyRequest extends Source
      */
     public function response(): ResponseInterface
     {
-        return Client::instance()->send($this->request());
+        return $this->client->send($this->request());
     }
 }

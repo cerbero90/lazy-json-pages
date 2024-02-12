@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Concerns;
 
-use Cerbero\LazyJsonPages\Services\Client;
 use Closure;
 use Generator;
 use Psr\Http\Message\ResponseInterface;
@@ -28,7 +27,7 @@ trait YieldsItemsByCursor
 
         while ($cursor = $this->toPage($generator->getReturn(), onlyNumerics: false)) {
             $uri = $this->uriForPage($request->getUri(), (string) $cursor);
-            $response = Client::instance()->send($request->withUri($uri));
+            $response = $this->client->send($request->withUri($uri));
 
             yield from $generator = $callback($response);
         }

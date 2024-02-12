@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Sources;
 
 use Cerbero\JsonParser\Concerns\DetectsEndpoints;
-use Cerbero\LazyJsonPages\Services\Client;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -44,6 +43,6 @@ class Endpoint extends Source
      */
     public function response(): ResponseInterface
     {
-        return Client::instance()->send($this->request());
+        return $this->client->send($this->request());
     }
 }

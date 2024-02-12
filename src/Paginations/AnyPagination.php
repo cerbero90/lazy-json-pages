@@ -47,7 +47,7 @@ class AnyPagination extends Pagination
     protected function matchingPagination(): Pagination
     {
         foreach ($this->supportedPaginations as $class) {
-            $pagination = new $class($this->source, $this->config);
+            $pagination = new $class($this->source, $this->client, $this->config);
 
             if ($pagination->matches()) {
                 return $pagination;

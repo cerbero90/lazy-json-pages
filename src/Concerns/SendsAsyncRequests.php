@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Concerns;
 
-use Cerbero\LazyJsonPages\Services\Client;
 use Generator;
 use GuzzleHttp\Pool;
 use Illuminate\Support\LazyCollection;
@@ -44,7 +43,7 @@ trait SendsAsyncRequests
      */
     protected function pool(UriInterface $uri, array $pages): Pool
     {
-        return new Pool(Client::instance(), $this->yieldRequests($uri, $pages), [
+        return new Pool($this->client, $this->yieldRequests($uri, $pages), [
             'concurrency' => $this->config->async,
             'fulfilled' => fn(ResponseInterface $response, int $page) => $this->book->addPage($page, $response),
             'rejected' => fn(Throwable $e, int $page) => $this->book->addFailedPage($page) && throw $e,

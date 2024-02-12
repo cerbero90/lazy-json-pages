@@ -1,10 +1,7 @@
 <?php
 
-use Cerbero\LazyJsonPages\Services\Client;
+use Cerbero\LazyJsonPages\Services\ClientFactory;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Orchestra\Testbench\Concerns\WithWorkbench;
@@ -35,7 +32,7 @@ uses(OrchestraTestCase::class, WithWorkbench::class)->in('Integration/LaravelTes
 */
 
 expect()->extend('toLoadItemsViaRequests', function (array $requests, Generator|array $headers = []) {
-    $responses = $transactions = $expectedUris = [];
+    $responses = $expectedUris = [];
     $responseHeaders = $headers;
 
     foreach ($requests as $uri => $fixture) {
@@ -48,13 +45,7 @@ expect()->extend('toLoadItemsViaRequests', function (array $requests, Generator|
         $expectedUris[] = $uri;
     }
 
-    $stack = HandlerStack::create(new MockHandler($responses));
-
-    $stack->push(Middleware::history($transactions));
-
-    Client::configure(['handler' => $stack]);
-
-    $this->sequence(...require fixture('items.php'));
+    $transactions = ClientFactory::fake($responses, fn() => $this->sequence(...require fixture('items.php')));
 
     $actualUris = array_map(fn(array $transaction) => (string) $transaction['request']->getUri(), $transactions);
 
@@ -62,23 +53,18 @@ expect()->extend('toLoadItemsViaRequests', function (array $requests, Generator|
 });
 
 expect()->extend('toFailRequest', function (string $uri) {
-    $transactions = [];
-
     $responses = [$exception = new RequestException('connection failed', new Request('GET', $uri))];
 
-    $stack = HandlerStack::create(new MockHandler($responses));
-
-    $stack->push(Middleware::history($transactions));
-
-    Client::configure(['handler' => $stack]);
-
-    try {
-        iterator_to_array($this->value);
-    } catch (Throwable $e) {
-        expect($e)->toBe($exception);
-    }
+    $transactions = ClientFactory::fake($responses, function() use ($exception) {
+        try {
+            iterator_to_array($this->value);
+        } catch (Throwable $e) {
+            expect($e)->toBe($exception);
+        }
+    });
 
     expect($transactions)->toHaveCount(1);
+
     expect((string) $transactions[0]['request']->getUri())->toBe($uri);
 });
 

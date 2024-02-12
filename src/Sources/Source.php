@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Sources;
 
+use GuzzleHttp\Client;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -29,6 +30,7 @@ abstract class Source
      */
     final public function __construct(
         protected readonly mixed $source,
+        protected readonly Client $client,
     ) {}
 
     /**

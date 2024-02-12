@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Providers;
 
-use Cerbero\LazyJsonPages\Services\Client;
+use Cerbero\LazyJsonPages\LazyJsonPages;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Events\ConnectionFailed;
@@ -26,7 +26,7 @@ final class LazyJsonPagesServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Client::middleware('laravel_events', Middleware::tap($this->sending(...), $this->sent(...)));
+        LazyJsonPages::globalMiddleware('laravel_events', Middleware::tap($this->sending(...), $this->sent(...)));
     }
 
     /**

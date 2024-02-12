@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Sources;
 
-use Cerbero\LazyJsonPages\Services\Client;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Illuminate\Http\Client\Request;
@@ -39,6 +38,6 @@ class LaravelClientRequest extends Source
      */
     public function response(): ResponseInterface
     {
-        return Client::instance()->send($this->request());
+        return $this->client->send($this->request());
     }
 }

@@ -9,6 +9,7 @@ use Cerbero\LazyJsonPages\Concerns\ResolvesPages;
 use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Services\Book;
 use Cerbero\LazyJsonPages\Sources\AnySource;
+use GuzzleHttp\Client;
 use IteratorAggregate;
 use Traversable;
 
@@ -39,6 +40,7 @@ abstract class Pagination implements IteratorAggregate
      */
     final public function __construct(
         protected readonly AnySource $source,
+        protected readonly Client $client,
         protected readonly Config $config,
     ) {
         $this->book = new Book();

@@ -31,6 +31,6 @@ class CustomPagination extends Pagination
             throw new InvalidPaginationException($this->config->pagination);
         }
 
-        yield from new $this->config->pagination($this->source, $this->config);
+        yield from new ($this->config->pagination)($this->source, $this->client, $this->config);
     }
 }

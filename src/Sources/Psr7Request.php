@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Sources;
 
-use Cerbero\LazyJsonPages\Services\Client;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -38,6 +37,6 @@ class Psr7Request extends Source
      */
     public function response(): ResponseInterface
     {
-        return Client::instance()->send($this->source);
+        return $this->client->send($this->source);
     }
 }

@@ -7,7 +7,7 @@ namespace Cerbero\LazyJsonPages;
 use Cerbero\LazyJson\Pointers\DotsConverter;
 use Cerbero\LazyJsonPages\Dtos\Config;
 use Cerbero\LazyJsonPages\Paginations\AnyPagination;
-use Cerbero\LazyJsonPages\Services\Client;
+use Cerbero\LazyJsonPages\Services\ClientFactory;
 use Cerbero\LazyJsonPages\Sources\AnySource;
 use Closure;
 use GuzzleHttp\RequestOptions;
@@ -19,9 +19,27 @@ use Illuminate\Support\LazyCollection;
 final class LazyJsonPages
 {
     /**
-     * The source of the paginated API.
+     * The HTTP client factory.
      */
-    private readonly AnySource $source;
+    private readonly ClientFactory $factory;
+
+    /**
+     * The Guzzle HTTP request options.
+     *
+     * @var array<string, mixed>
+     */
+    private array $options = [
+        RequestOptions::CONNECT_TIMEOUT => 5,
+        RequestOptions::READ_TIMEOUT => 5,
+        RequestOptions::TIMEOUT => 5,
+    ];
+
+    /**
+     * The Guzzle client middleware.
+     *
+     * @var array<string, callable>
+     */
+    private array $middleware = [];
 
     /**
      * The raw configuration of the API pagination.
@@ -31,13 +49,12 @@ final class LazyJsonPages
     private array $config = [];
 
     /**
-     * The Guzzle HTTP request options.
+     * Add a global middleware.
      */
-    private array $requestOptions = [
-        RequestOptions::CONNECT_TIMEOUT => 5,
-        RequestOptions::READ_TIMEOUT => 5,
-        RequestOptions::TIMEOUT => 5,
-    ];
+    public static function globalMiddleware(string $name, callable $middleware): void
+    {
+        ClientFactory::globalMiddleware($name, $middleware);
+    }
 
     /**
      * Instantiate the class statically.
@@ -50,9 +67,9 @@ final class LazyJsonPages
     /**
      * Instantiate the class.
      */
-    public function __construct(mixed $source)
+    public function __construct(private readonly mixed $source)
     {
-        $this->source = new AnySource($source);
+        $this->factory = new ClientFactory();
     }
 
     /**
@@ -178,7 +195,7 @@ final class LazyJsonPages
      */
     public function connectionTimeout(float|int $seconds): self
     {
-        $this->requestOptions[RequestOptions::CONNECT_TIMEOUT] = max(0, $seconds);
+        $this->options[RequestOptions::CONNECT_TIMEOUT] = max(0, $seconds);
 
         return $this;
     }
@@ -188,8 +205,8 @@ final class LazyJsonPages
      */
     public function requestTimeout(float|int $seconds): self
     {
-        $this->requestOptions[RequestOptions::TIMEOUT] = max(0, $seconds);
-        $this->requestOptions[RequestOptions::READ_TIMEOUT] = max(0, $seconds);
+        $this->options[RequestOptions::TIMEOUT] = max(0, $seconds);
+        $this->options[RequestOptions::READ_TIMEOUT] = max(0, $seconds);
 
         return $this;
     }
@@ -215,6 +232,16 @@ final class LazyJsonPages
     }
 
     /**
+     * Add an HTTP client middleware.
+     */
+    public function middleware(string $name, callable $middleware): self
+    {
+        $this->middleware[$name] = $middleware;
+
+        return $this;
+    }
+
+    /**
      * Retrieve a lazy collection yielding the paginated items.
      *
      * @return LazyCollection<int, mixed>
@@ -222,16 +249,12 @@ final class LazyJsonPages
      */
     public function collect(string $dot = '*'): LazyCollection
     {
-        Client::configure($this->requestOptions);
+        return new LazyCollection(function() use ($dot) {
+            $config = new Config(...$this->config, itemsPointer: DotsConverter::toPointer($dot));
+            $client = $this->factory->options($this->options)->middleware($this->middleware)->make();
+            $source = new AnySource($this->source, $client);
 
-        $config = new Config(...$this->config, itemsPointer: DotsConverter::toPointer($dot));
-
-        return new LazyCollection(function() use ($config) {
-            try {
-                yield from new AnyPagination($this->source, $config);
-            } finally {
-                Client::reset();
-            }
+            yield from new AnyPagination($source, $client, $config);
         });
     }
 }
