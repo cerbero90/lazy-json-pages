@@ -304,6 +304,9 @@ LazyJsonPages::globalMiddleware('fire_events', $fireEvents);
 Sometimes writing Guzzle middleware might be cumbersome, alternatively Lazy JSON Pages provides convenient methods to fire callbacks when sending a request, receiving a response or dealing with a transaction error:
 
 ```php
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
 LazyJsonPages::from($source)
     ->onRequest(fn(RequestInterface $request) => ...)
     ->onResponse(fn(ResponseInterface $response, RequestInterface $request) => ...)
