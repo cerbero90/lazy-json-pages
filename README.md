@@ -301,6 +301,15 @@ If we need a middleware to be added every time we invoke Lazy JSON Pages, we can
 LazyJsonPages::globalMiddleware('fire_events', $fireEvents);
 ```
 
+Sometimes writing Guzzle middleware might be cumbersome, alternatively Lazy JSON Pages provides convenient methods to fire callbacks when sending a request, receiving a response or dealing with a transaction error:
+
+```php
+LazyJsonPages::from($source)
+    ->onRequest(fn(RequestInterface $request) => ...)
+    ->onResponse(fn(ResponseInterface $response, RequestInterface $request) => ...)
+    ->onError(fn(Throwable $e, RequestInterface $request, ?ResponseInterface $response) => ...);
+```
+
 
 ### 💢 Errors handling
 

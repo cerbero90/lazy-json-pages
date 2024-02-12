@@ -12,6 +12,8 @@ use Cerbero\LazyJsonPages\Sources\AnySource;
 use Closure;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Support\LazyCollection;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * The Lazy JSON Pages entry-point
@@ -22,24 +24,6 @@ final class LazyJsonPages
      * The HTTP client factory.
      */
     private readonly ClientFactory $factory;
-
-    /**
-     * The Guzzle HTTP request options.
-     *
-     * @var array<string, mixed>
-     */
-    private array $options = [
-        RequestOptions::CONNECT_TIMEOUT => 5,
-        RequestOptions::READ_TIMEOUT => 5,
-        RequestOptions::TIMEOUT => 5,
-    ];
-
-    /**
-     * The Guzzle client middleware.
-     *
-     * @var array<string, callable>
-     */
-    private array $middleware = [];
 
     /**
      * The raw configuration of the API pagination.
@@ -195,7 +179,7 @@ final class LazyJsonPages
      */
     public function connectionTimeout(float|int $seconds): self
     {
-        $this->options[RequestOptions::CONNECT_TIMEOUT] = max(0, $seconds);
+        $this->factory->option(RequestOptions::CONNECT_TIMEOUT, max(0, $seconds));
 
         return $this;
     }
@@ -205,8 +189,8 @@ final class LazyJsonPages
      */
     public function requestTimeout(float|int $seconds): self
     {
-        $this->options[RequestOptions::TIMEOUT] = max(0, $seconds);
-        $this->options[RequestOptions::READ_TIMEOUT] = max(0, $seconds);
+        $this->factory->option(RequestOptions::TIMEOUT, max(0, $seconds));
+        $this->factory->option(RequestOptions::READ_TIMEOUT, max(0, $seconds));
 
         return $this;
     }
@@ -236,7 +220,43 @@ final class LazyJsonPages
      */
     public function middleware(string $name, callable $middleware): self
     {
-        $this->middleware[$name] = $middleware;
+        $this->factory->middleware($name, $middleware);
+
+        return $this;
+    }
+
+    /**
+     * Handle the sending request.
+     *
+     * @param (Closure(RequestInterface): void) $callback
+     */
+    public function onRequest(Closure $callback): self
+    {
+        $this->factory->onRequest($callback);
+
+        return $this;
+    }
+
+    /**
+     * Handle the received response.
+     *
+     * @param (Closure(ResponseInterface, RequestInterface): void) $callback
+     */
+    public function onResponse(Closure $callback): self
+    {
+        $this->factory->onResponse($callback);
+
+        return $this;
+    }
+
+    /**
+     * Handle a transaction error.
+     *
+     * @param (Closure(\Throwable, RequestInterface, ?ResponseInterface): void) $callback
+     */
+    public function onError(Closure $callback): self
+    {
+        $this->factory->onError($callback);
 
         return $this;
     }
@@ -249,9 +269,11 @@ final class LazyJsonPages
      */
     public function collect(string $dot = '*'): LazyCollection
     {
-        return new LazyCollection(function() use ($dot) {
-            $config = new Config(...$this->config, itemsPointer: DotsConverter::toPointer($dot));
-            $client = $this->factory->options($this->options)->middleware($this->middleware)->make();
+        $this->config['itemsPointer'] = DotsConverter::toPointer($dot);
+
+        return new LazyCollection(function() {
+            $client = $this->factory->make();
+            $config = new Config(...$this->config);
             $source = new AnySource($this->source, $client);
 
             yield from new AnyPagination($source, $client, $config);
