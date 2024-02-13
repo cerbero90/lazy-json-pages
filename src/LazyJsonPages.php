@@ -157,14 +157,6 @@ final class LazyJsonPages
     }
 
     /**
-     * Fetch pages synchronously.
-     */
-    public function sync(): self
-    {
-        return $this->async(1);
-    }
-
-    /**
      * Set the maximum number of concurrent async HTTP requests.
      */
     public function async(int $requests): self
