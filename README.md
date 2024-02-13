@@ -287,6 +287,12 @@ If you find yourself implementing the same custom pagination in different projec
 
 Paginated APIs differ from each other, so Lazy JSON Pages lets us tweak our HTTP requests specifically for our use case.
 
+By default HTTP requests are sent synchronously. If we want to send more than one request without waiting for the response, we can call the `async()` method and set the number of concurrent requests:
+
+```php
+LazyJsonPages::from($source)->async(requests: 5);
+```
+
 Internally, Lazy JSON Pages uses [Guzzle](https://docs.guzzlephp.org) as its HTTP client. We can customize the client behavior by adding as many [middleware](https://docs.guzzlephp.org/en/stable/handlers-and-middleware.html#middleware) as we need:
 
 ```php
