@@ -12,8 +12,9 @@ use Cerbero\LazyJsonPages\Sources\AnySource;
 use Closure;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Support\LazyCollection;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\RequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
+use Throwable;
 
 /**
  * The Lazy JSON Pages entry-point
@@ -23,7 +24,7 @@ final class LazyJsonPages
     /**
      * The HTTP client factory.
      */
-    private readonly ClientFactory $factory;
+    private readonly ClientFactory $client;
 
     /**
      * The raw configuration of the API pagination.
@@ -53,7 +54,7 @@ final class LazyJsonPages
      */
     public function __construct(private readonly mixed $source)
     {
-        $this->factory = new ClientFactory();
+        $this->client = new ClientFactory();
     }
 
     /**
@@ -171,7 +172,7 @@ final class LazyJsonPages
      */
     public function connectionTimeout(float|int $seconds): self
     {
-        $this->factory->option(RequestOptions::CONNECT_TIMEOUT, max(0, $seconds));
+        $this->client->config(RequestOptions::CONNECT_TIMEOUT, max(0, $seconds));
 
         return $this;
     }
@@ -181,8 +182,8 @@ final class LazyJsonPages
      */
     public function requestTimeout(float|int $seconds): self
     {
-        $this->factory->option(RequestOptions::TIMEOUT, max(0, $seconds));
-        $this->factory->option(RequestOptions::READ_TIMEOUT, max(0, $seconds));
+        $this->client->config(RequestOptions::TIMEOUT, max(0, $seconds));
+        $this->client->config(RequestOptions::READ_TIMEOUT, max(0, $seconds));
 
         return $this;
     }
@@ -212,7 +213,7 @@ final class LazyJsonPages
      */
     public function middleware(string $name, callable $middleware): self
     {
-        $this->factory->middleware($name, $middleware);
+        $this->client->middleware($name, $middleware);
 
         return $this;
     }
@@ -220,11 +221,11 @@ final class LazyJsonPages
     /**
      * Handle the sending request.
      *
-     * @param (Closure(RequestInterface): void) $callback
+     * @param Closure(Request $request, array<string, mixed> $config): void $callback
      */
     public function onRequest(Closure $callback): self
     {
-        $this->factory->onRequest($callback);
+        $this->client->onRequest($callback);
 
         return $this;
     }
@@ -232,11 +233,11 @@ final class LazyJsonPages
     /**
      * Handle the received response.
      *
-     * @param (Closure(ResponseInterface, RequestInterface): void) $callback
+     * @param Closure(Response $response, Request $request, array<string, mixed> $config): void $callback
      */
     public function onResponse(Closure $callback): self
     {
-        $this->factory->onResponse($callback);
+        $this->client->onResponse($callback);
 
         return $this;
     }
@@ -244,11 +245,23 @@ final class LazyJsonPages
     /**
      * Handle a transaction error.
      *
-     * @param (Closure(\Throwable, RequestInterface, ?ResponseInterface): void) $callback
+     * @param Closure(Throwable $e, Request $request, ?Response $response, array<string, mixed> $config): void $callback
      */
     public function onError(Closure $callback): self
     {
-        $this->factory->onError($callback);
+        $this->client->onError($callback);
+
+        return $this;
+    }
+
+    /**
+     * Throttle the requests to respect rate limiting.
+     */
+    public function throttle(int $requests, int $perSeconds = 0, int $perMinutes = 0, int $perHours = 0): self
+    {
+        $seconds = max(0, $perSeconds + $perMinutes * 60 + $perHours * 3600);
+
+        $this->client->throttle($requests, $seconds);
 
         return $this;
     }
@@ -264,7 +277,7 @@ final class LazyJsonPages
         $this->config['itemsPointer'] = DotsConverter::toPointer($dot);
 
         return new LazyCollection(function() {
-            $client = $this->factory->make();
+            $client = $this->client->make();
             $config = new Config(...$this->config);
             $source = new AnySource($this->source, $client);
 

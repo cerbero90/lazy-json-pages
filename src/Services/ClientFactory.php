@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Services;
 
+use Cerbero\LazyJsonPages\Middleware\Tap;
+use Cerbero\LazyJsonPages\Services\TapCallbacks;
 use Closure;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Promise\Create;
 use GuzzleHttp\RequestOptions;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -21,11 +21,11 @@ use Psr\Http\Message\ResponseInterface;
 final class ClientFactory
 {
     /**
-     * The default options.
+     * The default client configuration.
      *
      * @var array<string, mixed>
      */
-    private static array $defaultOptions = [
+    private static array $defaultConfig = [
         RequestOptions::CONNECT_TIMEOUT => 5,
         RequestOptions::READ_TIMEOUT => 5,
         RequestOptions::TIMEOUT => 5,
@@ -44,11 +44,16 @@ final class ClientFactory
     private static array $globalMiddleware = [];
 
     /**
-     * The custom options.
+     * The tap middleware callbacks.
+     */
+    private readonly TapCallbacks $tapCallbacks;
+
+    /**
+     * The custom client configuration.
      *
      * @var array<string, mixed>
      */
-    private array $options = [];
+    private array $config = [];
 
     /**
      * The local middleware.
@@ -58,25 +63,11 @@ final class ClientFactory
     private array $middleware = [];
 
     /**
-     * The callbacks to handle the sending request.
+     * The requests throttling.
      *
-     * @var Closure[]
+     * @var array<int, int>
      */
-    private array $onRequestCallbacks = [];
-
-    /**
-     * The callbacks to handle the received response.
-     *
-     * @var Closure[]
-     */
-    private array $onResponseCallbacks = [];
-
-    /**
-     * The callbacks to handle a transaction error.
-     *
-     * @var Closure[]
-     */
-    private array $onErrorCallbacks = [];
+    private array $throttling = [];
 
     /**
      * Add a global middleware.
@@ -100,21 +91,29 @@ final class ClientFactory
 
         $handler->push(Middleware::history($transactions));
 
-        self::$defaultOptions['handler'] = $handler;
+        self::$defaultConfig['handler'] = $handler;
 
         $callback();
 
-        unset(self::$defaultOptions['handler']);
+        unset(self::$defaultConfig['handler']);
 
         return $transactions;
     }
 
     /**
-     * Add the given Guzzle client option.
+     * Instantiate the class.
      */
-    public function option(string $name, mixed $value): self
+    public function __construct()
     {
-        $this->options[$name] = $value;
+        $this->tapCallbacks = new TapCallbacks();
+    }
+
+    /**
+     * Add the given option to the Guzzle client configuration.
+     */
+    public function config(string $name, mixed $value): self
+    {
+        $this->config[$name] = $value;
 
         return $this;
     }
@@ -134,7 +133,7 @@ final class ClientFactory
      */
     public function onRequest(Closure $callback): self
     {
-        $this->onRequestCallbacks[] = $callback;
+        $this->tapCallbacks->onRequest($callback);
 
         return $this->tap();
     }
@@ -144,30 +143,7 @@ final class ClientFactory
      */
     private function tap(): self
     {
-        $this->middleware['lazy_json_pages_tap'] ??= function (callable $handler): callable {
-            return function (RequestInterface $request, array $options) use ($handler) {
-                foreach ($this->onRequestCallbacks as $callback) {
-                    $callback($request);
-                }
-
-                return $handler($request, $options)->then(function(ResponseInterface $response) use ($request) {
-                    foreach ($this->onResponseCallbacks as $callback) {
-                        $callback($response, $request);
-                    }
-
-                    return $response;
-                }, function(mixed $reason) use ($request) {
-                    $exception = Create::exceptionFor($reason);
-                    $response = $reason instanceof RequestException ? $reason->getResponse() : null;
-
-                    foreach ($this->onErrorCallbacks as $callback) {
-                        $callback($exception, $request, $response);
-                    }
-
-                    return Create::rejectionFor($reason);
-                });
-            };
-        };
+        $this->middleware['lazy_json_pages_tap'] ??= new Tap($this->tapCallbacks);
 
         return $this;
     }
@@ -177,7 +153,7 @@ final class ClientFactory
      */
     public function onResponse(Closure $callback): self
     {
-        $this->onResponseCallbacks[] = $callback;
+        $this->tapCallbacks->onResponse($callback);
 
         return $this->tap();
     }
@@ -187,9 +163,21 @@ final class ClientFactory
      */
     public function onError(Closure $callback): self
     {
-        $this->onErrorCallbacks[] = $callback;
+        $this->tapCallbacks->onError($callback);
 
         return $this->tap();
+    }
+
+    /**
+     * Throttle the requests to respect rate limiting.
+     */
+    public function throttle(int $requests, int $seconds): self
+    {
+        $this->throttling[$seconds] = $requests;
+
+        // $this->middleware['lazy_json_pages_throttle'] ??= Tap::once();
+
+        return $this;
     }
 
     /**
@@ -197,13 +185,13 @@ final class ClientFactory
      */
     public function make(): Client
     {
-        $options = array_replace_recursive(self::$defaultOptions, $this->options);
-        $options['handler'] ??= HandlerStack::create();
+        $config = array_replace_recursive(self::$defaultConfig, $this->config);
+        $config['handler'] ??= HandlerStack::create();
 
         foreach ([...self::$globalMiddleware, ...$this->middleware] as $name => $middleware) {
-            $options['handler']->push($middleware, $name);
+            $config['handler']->push($middleware, $name);
         }
 
-        return new Client($options);
+        return new Client($config);
     }
 }
