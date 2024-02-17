@@ -55,10 +55,10 @@ class AnySource extends Source
         }
 
         foreach ($this->supportedSources as $class) {
-            $source = new $class($this->source, $this->client);
+            $source = new $class($this->source);
 
             if ($source->matches()) {
-                return $this->matchingSource = $source;
+                return $this->matchingSource = $source->setClient($this->client);
             }
         }
 

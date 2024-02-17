@@ -14,6 +14,11 @@ use Psr\Http\Message\ResponseInterface;
 abstract class Source
 {
     /**
+     * The HTTP client.
+     */
+    protected readonly Client $client;
+
+    /**
      * Retrieve the HTTP request.
      */
     abstract public function request(): RequestInterface;
@@ -30,7 +35,6 @@ abstract class Source
      */
     final public function __construct(
         protected readonly mixed $source,
-        protected readonly Client $client,
     ) {}
 
     /**
@@ -39,5 +43,15 @@ abstract class Source
     public function matches(): bool
     {
         return true;
+    }
+
+    /**
+     * Set the HTTP client.
+     */
+    public function setClient(Client $client): static
+    {
+        $this->client ??= $client;
+
+        return $this;
     }
 }

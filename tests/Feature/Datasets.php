@@ -2,7 +2,6 @@
 
 use Cerbero\LazyJsonPages\LazyJsonPages;
 use Cerbero\LazyJsonPages\Paginations\TotalPagesAwarePagination;
-use Cerbero\LazyJsonPages\Services\ClientFactory;
 use Cerbero\LazyJsonPages\Sources\CustomSourceSample;
 use GuzzleHttp\Psr7\Request as Psr7Request;
 use GuzzleHttp\Psr7\Response as Psr7Response;
@@ -19,7 +18,7 @@ dataset('sources', function () {
     $laravelClientResponse = new LaravelClientResponse($psr7Response);
     $laravelClientResponse->transferStats = new TransferStats($psr7Request, $psr7Response);
 
-    yield 'user-defined source' => [new CustomSourceSample(null, (new ClientFactory())->make()), false];
+    yield 'user-defined source' => [new CustomSourceSample(null), false];
     yield 'endpoint' => [$uri, true];
     yield 'Laravel client request' => [new LaravelClientRequest($psr7Request), true];
     yield 'Laravel client response' => [$laravelClientResponse, false];

@@ -279,7 +279,7 @@ final class LazyJsonPages
         return new LazyCollection(function() {
             $client = $this->client->make();
             $config = new Config(...$this->config);
-            $source = new AnySource($this->source, $client);
+            $source = (new AnySource($this->source))->setClient($client);
 
             yield from new AnyPagination($source, $client, $config);
         });

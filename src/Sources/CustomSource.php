@@ -27,7 +27,7 @@ class CustomSource extends Source
      */
     public function request(): RequestInterface
     {
-        return $this->source->request();
+        return $this->source->setClient($this->client)->request();
     }
 
     /**
@@ -37,6 +37,6 @@ class CustomSource extends Source
      */
     public function response(): ResponseInterface
     {
-        return $this->source->response();
+        return $this->source->setClient($this->client)->response();
     }
 }
