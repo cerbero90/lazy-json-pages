@@ -15,7 +15,7 @@ class LastPageAwarePagination extends Pagination
     use YieldsItemsByLength;
 
     /**
-     * Determine whether the configuration matches this pagination.
+     * Determine whether this pagination matches the configuration.
      */
     public function matches(): bool
     {

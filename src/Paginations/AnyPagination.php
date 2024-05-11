@@ -34,8 +34,8 @@ class AnyPagination extends Pagination
      */
     public function getIterator(): Traversable
     {
-        // yield only items and not their related index to ensure indexes continuity
-        // otherwise the actual indexes always start from 0 on every page.
+        // yield only items and not indexes to ensure incremental indexes
+        // otherwise the actual indexes always start from 0 on every page
         foreach ($this->matchingPagination() as $item) {
             yield $item;
         }
