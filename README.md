@@ -12,9 +12,12 @@
 [![Total Downloads][ico-downloads]][link-downloads]
 
 ```php
-$lazyCollection = LazyJsonPages::from($source)
+use Illuminate\Support\LazyCollection;
+
+LazyCollection::fromJsonPages($source)
     ->totalPages('pagination.total_pages')
     ->async(requests: 5)
+    ->throttle(requests: 60, perMinute: 1)
     ->collect('data.*');
 ```
 
@@ -51,21 +54,25 @@ composer require cerbero/lazy-json-pages
 
 ### 👣 Basics
 
-Depending on our coding style, we can initialize Lazy JSON Pages in 3 different ways:
+Depending on our coding style, we can initialize Lazy JSON Pages in 4 different ways:
 
 ```php
 use Cerbero\LazyJsonPages\LazyJsonPages;
+use Illuminate\Support\LazyCollection;
 
 use function Cerbero\LazyJsonPages\lazyJsonPages;
 
-// classic instantiation
-$lazyJsonPages = new LazyJsonPages($source);
+// lazy collection macro
+LazyCollection::fromJsonPages($source);
 
-// static method (easier methods chaining)
-$lazyJsonPages = LazyJsonPages::from($source);
+// classic instantiation
+new LazyJsonPages($source);
+
+// static method
+LazyJsonPages::from($source);
 
 // namespaced helper
-$lazyJsonPages = lazyJsonPages($source);
+lazyJsonPages($source);
 ```
 
 The variable `$source` in our examples represents any [source](#-sources) that points to a paginated JSON API. Once we define the source, we can then chain methods to define how the API is paginated:
