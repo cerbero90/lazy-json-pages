@@ -82,7 +82,7 @@ When calling `collect()`, we indicate that the pagination structure is defined a
 
 ### 💧 Sources
 
-A source is any mean that can point to a paginated JSON API. A number of sources is supported by default:
+A source is any means that can point to a paginated JSON API. A number of sources is supported by default:
 
 - **endpoint URIs**, e.g. `https://example.com/api/v1/users` or any instance of `Psr\Http\Message\UriInterface`
 - **PSR-7 requests**, i.e. any instance of `Psr\Http\Message\RequestInterface`
@@ -307,7 +307,7 @@ If we need a middleware to be added every time we invoke Lazy JSON Pages, we can
 LazyJsonPages::globalMiddleware('fire_events', $fireEvents);
 ```
 
-Sometimes writing Guzzle middleware might be cumbersome, alternatively Lazy JSON Pages provides convenient methods to fire callbacks when sending a request, receiving a response or dealing with a transaction error:
+Sometimes writing Guzzle middleware might be cumbersome. Alternatively Lazy JSON Pages provides convenient methods to fire callbacks when sending a request, receiving a response or dealing with a transaction error:
 
 ```php
 use Psr\Http\Message\RequestInterface;
@@ -319,6 +319,15 @@ LazyJsonPages::from($source)
     ->onError(fn(Throwable $e, RequestInterface $request, ?ResponseInterface $response) => ...);
 ```
 
+Several APIs set rate limits to limitate the number of allowed requests for a period of time. We can instruct Lazy JSON Pages to respect such limits by throttling our requests:
+
+```php
+// we send a maximum of 3 requests per second, 60 per minute and 3,000 per hour
+LazyJsonPages::from($source)
+    ->throttle(requests: 3, perSeconds: 1)
+    ->throttle(requests: 60, perMinutes: 1)
+    ->throttle(requests: 3000, perHours: 1);
+```
 
 ### 💢 Errors handling
 
