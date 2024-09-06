@@ -20,7 +20,7 @@ final class Book
     /**
      * The pages unable to be fetched.
      *
-     * @var array<int, int>
+     * @var int[]
      */
     private array $failedPages = [];
 
@@ -37,7 +37,7 @@ final class Book
     /**
      * Yield and forget each page.
      *
-     * @return Generator<int, mixed>
+     * @return Generator<int, ResponseInterface>
      */
     public function pullPages(): Generator
     {
@@ -72,5 +72,13 @@ final class Book
         $this->failedPages = [];
 
         return $failedPages;
+    }
+
+    /**
+     * Retrieve and unset the oldest failed page.
+     */
+    public function pullFailedPage(): ?int
+    {
+        return array_shift($this->failedPages);
     }
 }

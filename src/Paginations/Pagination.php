@@ -6,7 +6,7 @@ namespace Cerbero\LazyJsonPages\Paginations;
 
 use Cerbero\LazyJsonPages\Concerns\ParsesPages;
 use Cerbero\LazyJsonPages\Concerns\ResolvesPages;
-use Cerbero\LazyJsonPages\Dtos\Config;
+use Cerbero\LazyJsonPages\Data\Config;
 use Cerbero\LazyJsonPages\Services\Book;
 use Cerbero\LazyJsonPages\Sources\AnySource;
 use GuzzleHttp\Client;

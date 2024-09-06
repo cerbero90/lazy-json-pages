@@ -49,6 +49,11 @@ final class ClientFactory
     private readonly TapCallbacks $tapCallbacks;
 
     /**
+     * The rate limits.
+     */
+    public readonly RateLimits $rateLimits;
+
+    /**
      * The custom client configuration.
      *
      * @var array<string, mixed>
@@ -61,13 +66,6 @@ final class ClientFactory
      * @var array<string, callable>
      */
     private array $middleware = [];
-
-    /**
-     * The requests throttling.
-     *
-     * @var array<int, int>
-     */
-    private array $throttling = [];
 
     /**
      * Add a global middleware.
@@ -106,10 +104,13 @@ final class ClientFactory
     public function __construct()
     {
         $this->tapCallbacks = new TapCallbacks();
+        $this->rateLimits = new RateLimits();
     }
 
     /**
      * Add the given option to the Guzzle client configuration.
+     *
+     * @param RequestOptions::* $name
      */
     public function config(string $name, mixed $value): self
     {
@@ -133,17 +134,9 @@ final class ClientFactory
      */
     public function onRequest(Closure $callback): self
     {
-        $this->tapCallbacks->onRequest($callback);
-
-        return $this->tap();
-    }
-
-    /**
-     * Add the middleware to handle a request before and after it is sent.
-     */
-    private function tap(): self
-    {
         $this->middleware['lazy_json_pages_tap'] ??= new Tap($this->tapCallbacks);
+
+        $this->tapCallbacks->onRequest($callback);
 
         return $this;
     }
@@ -153,9 +146,11 @@ final class ClientFactory
      */
     public function onResponse(Closure $callback): self
     {
+        $this->middleware['lazy_json_pages_tap'] ??= new Tap($this->tapCallbacks);
+
         $this->tapCallbacks->onResponse($callback);
 
-        return $this->tap();
+        return $this;
     }
 
     /**
@@ -163,19 +158,21 @@ final class ClientFactory
      */
     public function onError(Closure $callback): self
     {
+        $this->middleware['lazy_json_pages_tap'] ??= new Tap($this->tapCallbacks);
+
         $this->tapCallbacks->onError($callback);
 
-        return $this->tap();
+        return $this;
     }
 
     /**
      * Throttle the requests to respect rate limiting.
      */
-    public function throttle(int $requests, int $seconds): self
+    public function throttle(int $requests, int $perSeconds): self
     {
-        $this->throttling[$seconds] = $requests;
+        $this->rateLimits->add($requests, $perSeconds);
 
-        // $this->middleware['lazy_json_pages_throttle'] ??= Tap::once();
+        $this->middleware['lazy_json_pages_throttle'] ??= Tap::once(fn() => $this->rateLimits->hit());
 
         return $this;
     }

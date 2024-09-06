@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages;
 
 use Cerbero\LazyJson\Pointers\DotsConverter;
-use Cerbero\LazyJsonPages\Dtos\Config;
+use Cerbero\LazyJsonPages\Data\Config;
 use Cerbero\LazyJsonPages\Paginations\AnyPagination;
 use Cerbero\LazyJsonPages\Services\ClientFactory;
 use Cerbero\LazyJsonPages\Sources\AnySource;
@@ -29,7 +29,7 @@ final class LazyJsonPages
     /**
      * The raw configuration of the API pagination.
      *
-     * @var array<string, mixed>
+     * @var array<Config::OPTION_*, mixed>
      */
     private array $config = [];
 
@@ -62,7 +62,7 @@ final class LazyJsonPages
      */
     public function pageName(string $name): self
     {
-        $this->config['pageName'] = $name;
+        $this->config[Config::OPTION_PAGE_NAME] = $name;
 
         return $this;
     }
@@ -72,7 +72,7 @@ final class LazyJsonPages
      */
     public function pageInPath(string $pattern = '/(\d+)(?!.*\d)/'): self
     {
-        $this->config['pageInPath'] = $pattern;
+        $this->config[Config::OPTION_PAGE_IN_PATH] = $pattern;
 
         return $this;
     }
@@ -82,7 +82,7 @@ final class LazyJsonPages
      */
     public function firstPage(int $page): self
     {
-        $this->config['firstPage'] = max(0, $page);
+        $this->config[Config::OPTION_FIRST_PAGE] = max(0, $page);
 
         return $this;
     }
@@ -92,7 +92,7 @@ final class LazyJsonPages
      */
     public function totalPages(string $key): self
     {
-        $this->config['totalPagesKey'] = $key;
+        $this->config[Config::OPTION_TOTAL_PAGES_KEY] = $key;
 
         return $this;
     }
@@ -102,7 +102,7 @@ final class LazyJsonPages
      */
     public function totalItems(string $key): self
     {
-        $this->config['totalItemsKey'] = $key;
+        $this->config[Config::OPTION_TOTAL_ITEMS_KEY] = $key;
 
         return $this;
     }
@@ -112,7 +112,7 @@ final class LazyJsonPages
      */
     public function cursor(string $key): self
     {
-        $this->config['cursorKey'] = $key;
+        $this->config[Config::OPTION_CURSOR_KEY] = $key;
 
         return $this;
     }
@@ -122,7 +122,7 @@ final class LazyJsonPages
      */
     public function lastPage(string $key): self
     {
-        $this->config['lastPageKey'] = $key;
+        $this->config[Config::OPTION_LAST_PAGE_KEY] = $key;
 
         return $this;
     }
@@ -132,7 +132,7 @@ final class LazyJsonPages
      */
     public function offset(string $key = 'offset'): self
     {
-        $this->config['offsetKey'] = $key;
+        $this->config[Config::OPTION_OFFSET_KEY] = $key;
 
         return $this;
     }
@@ -142,7 +142,7 @@ final class LazyJsonPages
      */
     public function linkHeader(): self
     {
-        $this->config['hasLinkHeader'] = true;
+        $this->config[Config::OPTION_HAS_LINK_HEADER] = true;
 
         return $this;
     }
@@ -152,7 +152,23 @@ final class LazyJsonPages
      */
     public function pagination(string $class): self
     {
-        $this->config['pagination'] = $class;
+        $this->config[Config::OPTION_PAGINATION] = $class;
+
+        return $this;
+    }
+
+    /**
+     * Throttle the requests to respect rate limiting.
+     */
+    public function throttle(int $requests, int $perSeconds = 0, int $perMinutes = 0, int $perHours = 0): self
+    {
+        $seconds = $perSeconds + $perMinutes * 60 + $perHours * 3600;
+
+        if ($requests > 0 && $seconds > 0) {
+            $this->config[Config::OPTION_RATE_LIMITS] ??= $this->client->rateLimits;
+
+            $this->client->throttle($requests, $seconds);
+        }
 
         return $this;
     }
@@ -162,7 +178,9 @@ final class LazyJsonPages
      */
     public function async(int $requests): self
     {
-        $this->config['async'] = max(1, $requests);
+        $this->config[Config::OPTION_ASYNC] = max(1, $requests);
+
+        $this->client->config(RequestOptions::STREAM, $this->config[Config::OPTION_ASYNC] === 1);
 
         return $this;
     }
@@ -174,6 +192,8 @@ final class LazyJsonPages
     {
         $this->client->config(RequestOptions::CONNECT_TIMEOUT, max(0, $seconds));
 
+        $this->client->config(RequestOptions::READ_TIMEOUT, max(0, $seconds));
+
         return $this;
     }
 
@@ -183,7 +203,6 @@ final class LazyJsonPages
     public function requestTimeout(float|int $seconds): self
     {
         $this->client->config(RequestOptions::TIMEOUT, max(0, $seconds));
-        $this->client->config(RequestOptions::READ_TIMEOUT, max(0, $seconds));
 
         return $this;
     }
@@ -193,7 +212,7 @@ final class LazyJsonPages
      */
     public function attempts(int $times): self
     {
-        $this->config['attempts'] = max(1, $times);
+        $this->config[Config::OPTION_ATTEMPTS] = max(1, $times);
 
         return $this;
     }
@@ -203,7 +222,7 @@ final class LazyJsonPages
      */
     public function backoff(Closure $callback): self
     {
-        $this->config['backoff'] = $callback;
+        $this->config[Config::OPTION_BACKOFF] = $callback;
 
         return $this;
     }
@@ -255,18 +274,6 @@ final class LazyJsonPages
     }
 
     /**
-     * Throttle the requests to respect rate limiting.
-     */
-    public function throttle(int $requests, int $perSeconds = 0, int $perMinutes = 0, int $perHours = 0): self
-    {
-        $seconds = max(0, $perSeconds + $perMinutes * 60 + $perHours * 3600);
-
-        $this->client->throttle($requests, $seconds);
-
-        return $this;
-    }
-
-    /**
      * Retrieve a lazy collection yielding the paginated items.
      *
      * @return LazyCollection<int, mixed>
@@ -274,7 +281,7 @@ final class LazyJsonPages
      */
     public function collect(string $dot = '*'): LazyCollection
     {
-        $this->config['itemsPointer'] = DotsConverter::toPointer($dot);
+        $this->config[Config::OPTION_ITEMS_POINTER] = DotsConverter::toPointer($dot);
 
         return new LazyCollection(function() {
             $client = $this->client->make();

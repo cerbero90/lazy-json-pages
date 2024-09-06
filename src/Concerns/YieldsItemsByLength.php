@@ -7,7 +7,6 @@ namespace Cerbero\LazyJsonPages\Concerns;
 use Cerbero\LazyJsonPages\Exceptions\InvalidKeyException;
 use Closure;
 use Generator;
-use Illuminate\Support\LazyCollection;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -20,10 +19,10 @@ trait YieldsItemsByLength
     /**
      * Yield paginated items until the page resolved from the given key is reached.
      *
-     * @param (Closure(int): int) $callback
-     * @return Generator<int, mixed>
+     * @param ?Closure(int): int $callback
+     * @return Generator<int, mixed, null, int>
      */
-    protected function yieldItemsUntilKey(string $key, Closure $callback = null): Generator
+    protected function yieldItemsUntilKey(string $key, ?Closure $callback = null): Generator
     {
         yield from $this->yieldItemsUntilPage(function(ResponseInterface $response) use ($key, $callback) {
             yield from $generator = $this->yieldItemsAndGetKey($response, $key);
@@ -39,33 +38,15 @@ trait YieldsItemsByLength
     /**
      * Yield paginated items until the resolved page is reached.
      *
-     * @param (Closure(ResponseInterface): Generator<int, mixed>) $callback
+     * @param Closure(ResponseInterface): Generator<int, mixed, null, int> $callback
      * @return Generator<int, mixed>
      */
     protected function yieldItemsUntilPage(Closure $callback): Generator
     {
         yield from $generator = $callback($this->source->pullResponse());
 
-        $uri = $this->source->request()->getUri();
-        $chunkedPages = $this->chunkPages($generator->getReturn());
-
-        foreach ($this->fetchPagesAsynchronously($chunkedPages, $uri) as $page) {
-            yield from $this->yieldItemsFrom($page);
+        foreach ($this->fetchPagesAsynchronously($generator->getReturn()) as $response) {
+            yield from $this->yieldItemsFrom($response);
         }
-    }
-
-    /**
-     * Retrieve the given pages in chunks.
-     *
-     * @return LazyCollection<int, LazyCollection<int, int>>
-     */
-    protected function chunkPages(int $pages): LazyCollection
-    {
-        $firstPage = $this->config->firstPage + 1;
-        $lastPage = $this->config->firstPage == 0 ? $pages - 1 : $pages;
-
-        return $firstPage > $lastPage
-            ? LazyCollection::empty()
-            : LazyCollection::range($firstPage, $lastPage)->chunk($this->config->async);
     }
 }

@@ -6,64 +6,95 @@ namespace Cerbero\LazyJsonPages\Concerns;
 
 use Generator;
 use GuzzleHttp\Pool;
-use Illuminate\Support\LazyCollection;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\UriInterface;
 use Throwable;
-use Traversable;
 
 /**
  * The trait to send asynchronous HTTP requests.
  *
+ * @property-read \Cerbero\LazyJsonPages\Sources\AnySource $source
+ * @property-read \Cerbero\LazyJsonPages\Services\Book $book
  */
 trait SendsAsyncRequests
 {
+    use RespectsRateLimits;
     use RetriesHttpRequests;
 
     /**
-     * Fetch pages by performing asynchronous HTTP calls.
+     * Fetch pages by sending asynchronous HTTP requests.
      *
-     * @param LazyCollection<int, LazyCollection<int, int>> $chunkedPages
-     * @return Traversable<int, ResponseInterface>
+     * @return Generator<int, ResponseInterface>
      */
-    protected function fetchPagesAsynchronously(LazyCollection $chunkedPages, UriInterface $uri): Traversable
+    protected function fetchPagesAsynchronously(int $totalPages): Generator
     {
-        foreach ($chunkedPages as $pages) {
-            $this->retry(fn() => $this->pool($uri, $pages->all())->promise()->wait());
+        $request = clone $this->source->request();
+        $fromPage = $this->config->firstPage + 1;
+        $toPage = $this->config->firstPage == 0 ? $totalPages - 1 : $totalPages;
 
-            yield from $this->book->pullPages();
+        yield from $this->retry(function() use ($request, &$fromPage, $toPage) {
+            foreach ($this->chunkRequestsBetweenPages($request, $fromPage, $toPage) as $requests) {
+                yield from $this->pool($requests);
+            }
+        });
+    }
+
+    /**
+     * Retrieve requests for the given pages in chunks.
+     *
+     * @return Generator<int, Generator<int, RequestInterface>>
+     */
+    protected function chunkRequestsBetweenPages(RequestInterface $request, int &$fromPage, int $toPage): Generator
+    {
+        while ($fromPage <= $toPage) {
+            yield $this->yieldRequestsBetweenPages($request, $fromPage, $toPage);
+
+            $this->respectRateLimits();
         }
     }
 
     /**
-     * Retrieve a pool of asynchronous requests.
+     * Yield the requests between the given pages.
      *
-     * @param array<int, int> $pages
-     */
-    protected function pool(UriInterface $uri, array $pages): Pool
-    {
-        return new Pool($this->client, $this->yieldRequests($uri, $pages), [
-            'concurrency' => $this->config->async,
-            'fulfilled' => fn(ResponseInterface $response, int $page) => $this->book->addPage($page, $response),
-            'rejected' => fn(Throwable $e, int $page) => $this->book->addFailedPage($page) && throw $e,
-        ]);
-    }
-
-    /**
-     * Retrieve a generator yielding the HTTP requests for the given pages.
-     *
-     * @param array<int, int> $pages
      * @return Generator<int, RequestInterface>
      */
-    protected function yieldRequests(UriInterface $uri, array $pages): Generator
+    protected function yieldRequestsBetweenPages(RequestInterface $request, int &$fromPage, int $toPage): Generator
     {
-        /** @var RequestInterface $request */
-        $request = clone $this->source->request();
-        $pages = $this->book->pullFailedPages() ?: $pages;
+        $chunkSize = min($this->config->async, $this->config->rateLimits?->threshold() ?? INF);
 
-        foreach ($pages as $page) {
-            yield $page => $request->withUri($this->uriForPage($uri, (string) $page));
+        for ($i = 0; $i < $chunkSize && $fromPage <= $toPage; $i++) {
+            $page = $this->book->pullFailedPage() ?? $fromPage++;
+
+            yield $page => $request->withUri($this->uriForPage($request->getUri(), (string) $page));
         }
+    }
+
+    /**
+     * Send a pool of asynchronous requests.
+     *
+     * @param Generator<int, RequestInterface> $requests
+     * @return Generator<int, ResponseInterface>
+     * @throws Throwable
+     */
+    protected function pool(Generator $requests): Generator
+    {
+        $exception = null;
+
+        $config = [
+            'concurrency' => $this->config->async,
+            'fulfilled' => fn(ResponseInterface $response, int $page) => $this->book->addPage($page, $response),
+            'rejected' => function(Throwable $e, int $page) use (&$exception) {
+                $this->book->addFailedPage($page);
+                $exception = $e;
+            },
+        ];
+
+        (new Pool($this->client, $requests, $config))->promise()->wait();
+
+        if (isset($exception)) {
+            throw $exception;
+        }
+
+        yield from $this->book->pullPages();
     }
 }

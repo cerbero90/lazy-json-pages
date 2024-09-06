@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Exceptions;
 
-use Cerbero\LazyJsonPages\Dtos\Config;
+use Cerbero\LazyJsonPages\Data\Config;
 
 /**
  * The exception to throw when a pagination is not supported.
