@@ -24,7 +24,7 @@ trait YieldsItemsByLength
      */
     protected function yieldItemsUntilKey(string $key, ?Closure $callback = null): Generator
     {
-        yield from $this->yieldItemsUntilPage(function(ResponseInterface $response) use ($key, $callback) {
+        yield from $this->yieldItemsUntilPage(function (ResponseInterface $response) use ($key, $callback) {
             yield from $generator = $this->yieldItemsAndGetKey($response, $key);
 
             if (!is_int($page = $this->toPage($generator->getReturn()))) {

@@ -3,6 +3,6 @@
 use Cerbero\LazyJsonPages\LazyJsonPages;
 use Illuminate\Support\LazyCollection;
 
-(static function() {
+(static function () {
     LazyCollection::macro('fromJsonPages', [LazyJsonPages::class, 'from']);
 })();

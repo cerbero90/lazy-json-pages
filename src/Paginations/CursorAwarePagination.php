@@ -33,7 +33,7 @@ class CursorAwarePagination extends Pagination
      */
     public function getIterator(): Traversable
     {
-        yield from $this->yieldItemsByCursor(function(ResponseInterface $response) {
+        yield from $this->yieldItemsByCursor(function (ResponseInterface $response) {
             yield from $generator = $this->yieldItemsAndGetKey($response, $this->config->cursorKey);
 
             return $generator->getReturn();

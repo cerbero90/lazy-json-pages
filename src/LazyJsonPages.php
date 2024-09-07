@@ -283,7 +283,7 @@ final class LazyJsonPages
     {
         $this->config[Config::OPTION_ITEMS_POINTER] = DotsConverter::toPointer($dot);
 
-        return new LazyCollection(function() {
+        return new LazyCollection(function () {
             $client = $this->client->make();
             $config = new Config(...$this->config);
             $source = (new AnySource($this->source))->setClient($client);

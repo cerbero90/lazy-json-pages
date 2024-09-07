@@ -29,7 +29,7 @@ class LastPageAwarePagination extends Pagination
      */
     public function getIterator(): Traversable
     {
-        yield from $this->yieldItemsUntilKey($this->config->lastPageKey, function(int $page) {
+        yield from $this->yieldItemsUntilKey($this->config->lastPageKey, function (int $page) {
             return $this->config->firstPage === 0 ? $page + 1 : $page;
         });
     }

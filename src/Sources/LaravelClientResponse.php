@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Sources;
 
 use Cerbero\LazyJsonPages\Exceptions\RequestNotSentException;
+use Illuminate\Http\Client\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Illuminate\Http\Client\Response;
 
 /**
  * The Laravel HTTP client source.

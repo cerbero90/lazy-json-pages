@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Services;
 
 use Cerbero\LazyJsonPages\Middleware\Tap;
-use Cerbero\LazyJsonPages\Services\TapCallbacks;
 use Closure;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;

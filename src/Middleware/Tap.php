@@ -45,9 +45,7 @@ final class Tap
     /**
      * Instantiate the class.
      */
-    public function __construct(private readonly TapCallbacks $callbacks)
-    {
-    }
+    public function __construct(private readonly TapCallbacks $callbacks) {}
 
     /**
      * Handle an HTTP request before and after it is sent.

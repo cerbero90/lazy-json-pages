@@ -81,7 +81,7 @@ class LinkHeaderAwarePagination extends Pagination
      */
     protected function yieldItemsByLastPage(int $lastPage): Generator
     {
-        yield from $this->yieldItemsUntilPage(function(ResponseInterface $response) use ($lastPage) {
+        yield from $this->yieldItemsUntilPage(function (ResponseInterface $response) use ($lastPage) {
             yield from $this->yieldItemsFrom($response);
 
             return $this->config->firstPage === 0 ? $lastPage + 1 : $lastPage;
@@ -95,7 +95,7 @@ class LinkHeaderAwarePagination extends Pagination
      */
     protected function yieldItemsByNextLink(): Generator
     {
-        yield from $this->yieldItemsByCursor(function(ResponseInterface $response) {
+        yield from $this->yieldItemsByCursor(function (ResponseInterface $response) {
             yield from $this->yieldItemsFrom($response);
 
             return $this->parseLinkHeader($response->getHeaderLine('link'), 'next');

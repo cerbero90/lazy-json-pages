@@ -32,7 +32,7 @@ trait SendsAsyncRequests
         $fromPage = $this->config->firstPage + 1;
         $toPage = $this->config->firstPage == 0 ? $totalPages - 1 : $totalPages;
 
-        yield from $this->retry(function() use ($request, &$fromPage, $toPage) {
+        yield from $this->retry(function () use ($request, &$fromPage, $toPage) {
             foreach ($this->chunkRequestsBetweenPages($request, $fromPage, $toPage) as $requests) {
                 yield from $this->pool($requests);
             }
@@ -83,7 +83,7 @@ trait SendsAsyncRequests
         $config = [
             'concurrency' => $this->config->async,
             'fulfilled' => fn(ResponseInterface $response, int $page) => $this->book->addPage($page, $response),
-            'rejected' => function(Throwable $e, int $page) use (&$exception) {
+            'rejected' => function (Throwable $e, int $page) use (&$exception) {
                 $this->book->addFailedPage($page);
                 $exception = $e;
             },

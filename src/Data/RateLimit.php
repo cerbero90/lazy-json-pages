@@ -25,8 +25,7 @@ final class RateLimit
     public function __construct(
         public readonly int $requests,
         public readonly int $perSeconds,
-    ) {
-    }
+    ) {}
 
     /**
      * Update the requests sent before this rate limit resets.

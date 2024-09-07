@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages\Sources;
 
+use Illuminate\Http\Client\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Illuminate\Http\Client\Request;
 
 /**
  * The Laravel HTTP client source.

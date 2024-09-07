@@ -28,7 +28,7 @@ trait YieldsItemsByCursor
 
         yield from $generator = $callback($this->source->pullResponse());
 
-        yield from $this->retry(function() use ($callback, $request, $generator) {
+        yield from $this->retry(function () use ($callback, $request, $generator) {
             while ($cursor = $this->toPage($generator->getReturn(), onlyNumerics: false)) {
                 $this->respectRateLimits();
 
