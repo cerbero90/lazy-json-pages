@@ -57,7 +57,7 @@ final class RateLimit
     /**
      * Retrieve the timestamp when this rate limit resets.
      */
-    public function resetsAt(): float
+    public function resetsAt(): ?float
     {
         return $this->resetsAt;
     }

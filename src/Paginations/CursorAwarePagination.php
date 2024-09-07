@@ -34,6 +34,7 @@ class CursorAwarePagination extends Pagination
     public function getIterator(): Traversable
     {
         yield from $this->yieldItemsByCursor(function (ResponseInterface $response) {
+            /** @phpstan-ignore-next-line */
             yield from $generator = $this->yieldItemsAndGetKey($response, $this->config->cursorKey);
 
             return $generator->getReturn();

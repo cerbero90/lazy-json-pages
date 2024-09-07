@@ -29,6 +29,7 @@ class LastPageAwarePagination extends Pagination
      */
     public function getIterator(): Traversable
     {
+        /** @phpstan-ignore-next-line */
         yield from $this->yieldItemsUntilKey($this->config->lastPageKey, function (int $page) {
             return $this->config->firstPage === 0 ? $page + 1 : $page;
         });

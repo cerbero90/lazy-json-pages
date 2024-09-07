@@ -6,7 +6,6 @@ namespace Cerbero\LazyJsonPages\Paginations;
 
 use Cerbero\LazyJsonPages\Concerns\YieldsItemsByCursor;
 use Cerbero\LazyJsonPages\Concerns\YieldsItemsByLength;
-use Cerbero\LazyJsonPages\Exceptions\InvalidLinkHeaderException;
 use Generator;
 use Psr\Http\Message\ResponseInterface;
 use Traversable;
@@ -39,10 +38,10 @@ class LinkHeaderAwarePagination extends Pagination
      * Yield the paginated items.
      *
      * @return Traversable<int, mixed>
-     * @throws InvalidLinkHeaderException
      */
     public function getIterator(): Traversable
     {
+        /** @var array{last?: int, next?: string|int} */
         $links = $this->parseLinkHeader($this->source->response()->getHeaderLine('link'));
 
         yield from match (true) {
@@ -55,11 +54,10 @@ class LinkHeaderAwarePagination extends Pagination
     /**
      * Retrieve the parsed Link header.
      *
-     * @template TParsed of array{last?: int, next?: string|int}
      * @template TRelation of string|null
      *
      * @param TRelation $relation
-     * @return (TRelation is null ? TParsed : string|int|null)
+     * @return (TRelation is null ? array<string, int|string|null> : string|int|null)
      */
     protected function parseLinkHeader(string $linkHeader, ?string $relation = null): array|string|int|null
     {

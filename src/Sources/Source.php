@@ -16,7 +16,7 @@ abstract class Source
     /**
      * The HTTP client.
      */
-    protected readonly Client $client;
+    protected Client $client;
 
     /**
      * Retrieve the HTTP request.

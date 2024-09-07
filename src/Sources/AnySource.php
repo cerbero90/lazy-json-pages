@@ -28,7 +28,7 @@ class AnySource extends Source
     /**
      * The matching source.
      */
-    protected readonly Source $matchingSource;
+    protected Source $matchingSource;
 
     /**
      * The cached HTTP response.

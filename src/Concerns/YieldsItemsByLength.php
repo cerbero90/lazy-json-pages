@@ -20,7 +20,7 @@ trait YieldsItemsByLength
      * Yield paginated items until the page resolved from the given key is reached.
      *
      * @param ?Closure(int): int $callback
-     * @return Generator<int, mixed, null, int>
+     * @return Generator<int, mixed>
      */
     protected function yieldItemsUntilKey(string $key, ?Closure $callback = null): Generator
     {
@@ -38,14 +38,17 @@ trait YieldsItemsByLength
     /**
      * Yield paginated items until the resolved page is reached.
      *
-     * @param Closure(ResponseInterface): Generator<int, mixed, null, int> $callback
+     * @param Closure(ResponseInterface): Generator<int, mixed> $callback
      * @return Generator<int, mixed>
      */
     protected function yieldItemsUntilPage(Closure $callback): Generator
     {
         yield from $generator = $callback($this->source->pullResponse());
 
-        foreach ($this->fetchPagesAsynchronously($generator->getReturn()) as $response) {
+        /** @var int */
+        $totalPages = $generator->getReturn();
+
+        foreach ($this->fetchPagesAsynchronously($totalPages) as $response) {
             yield from $this->yieldItemsFrom($response);
         }
     }

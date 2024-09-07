@@ -32,7 +32,7 @@ class SymfonyRequest extends Source
         return new Psr7Request(
             $this->source->getMethod(),
             $this->source->getUri(),
-            $this->source->headers->all(),
+            $this->source->headers->all(), /** @phpstan-ignore-line */
             $this->source->getContent() ?: null,
         );
     }

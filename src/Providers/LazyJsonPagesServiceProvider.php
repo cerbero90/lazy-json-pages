@@ -18,6 +18,8 @@ use Throwable;
 
 /**
  * The service provider to integrate with Laravel.
+ *
+ * @property-read array{events: \Illuminate\Contracts\Events\Dispatcher} $app
  */
 final class LazyJsonPagesServiceProvider extends ServiceProvider
 {

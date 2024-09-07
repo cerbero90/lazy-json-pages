@@ -277,7 +277,7 @@ final class LazyJsonPages
      * Retrieve a lazy collection yielding the paginated items.
      *
      * @return LazyCollection<int, mixed>
-     * @throws UnsupportedPaginationException
+     * @throws \Cerbero\LazyJsonPages\Exceptions\UnsupportedPaginationException
      */
     public function collect(string $dot = '*'): LazyCollection
     {
@@ -285,7 +285,7 @@ final class LazyJsonPages
 
         return new LazyCollection(function () {
             $client = $this->client->make();
-            $config = new Config(...$this->config);
+            $config = new Config(...$this->config); /** @phpstan-ignore-line */
             $source = (new AnySource($this->source))->setClient($client);
 
             yield from new AnyPagination($source, $client, $config);

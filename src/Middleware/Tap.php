@@ -50,7 +50,7 @@ final class Tap
     /**
      * Handle an HTTP request before and after it is sent.
      *
-     * @param callable(RequestInterface, array): PromiseInterface $handler
+     * @param callable(RequestInterface, array<string, mixed>): PromiseInterface $handler
      */
     public function __invoke(callable $handler): Closure
     {

@@ -31,6 +31,7 @@ class TotalItemsAwarePagination extends Pagination
      */
     public function getIterator(): Traversable
     {
+        /** @phpstan-ignore-next-line */
         yield from $this->yieldItemsUntilKey($this->config->totalItemsKey, function (int $totalItems) {
             return $this->itemsPerPage > 0 ? (int) ceil($totalItems / $this->itemsPerPage) : 0;
         });

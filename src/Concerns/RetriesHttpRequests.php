@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\LazyJsonPages\Exceptions\OutOfAttemptsException;
+use Closure;
 use Generator;
 use GuzzleHttp\Exception\TransferException;
 use Illuminate\Support\LazyCollection;
@@ -20,10 +21,11 @@ trait RetriesHttpRequests
     /**
      * Retry to yield HTTP responses from the given callback.
      *
-     * @param callable $callback
-     * @return Generator<int, mixed>
+     * @template TGen of Generator
+     * @param Closure(): TGen $callback
+     * @return TGen
      */
-    protected function retry(callable $callback): Generator
+    protected function retry(Closure $callback): Generator
     {
         $attempt = 0;
         $remainingAttempts = $this->config->attempts;

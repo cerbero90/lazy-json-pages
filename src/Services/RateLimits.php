@@ -63,7 +63,7 @@ final class RateLimits
 
         foreach ($this->rateLimits as $rateLimit) {
             if ($rateLimit->wasReached()) {
-                $timestamp = max($rateLimit->resetsAt(), $timestamp);
+                $timestamp = max($rateLimit->resetsAt() ?? 0.0, $timestamp);
 
                 $rateLimit->reset();
             }

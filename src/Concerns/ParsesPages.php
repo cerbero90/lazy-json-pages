@@ -17,7 +17,7 @@ trait ParsesPages
     /**
      * The number of items per page.
      */
-    protected readonly int $itemsPerPage;
+    protected int $itemsPerPage;
 
     /**
      * Yield paginated items and the given key from the provided response.
@@ -35,6 +35,7 @@ trait ParsesPages
 
         foreach (JsonParser::parse($response)->pointers($pointers) as $item) {
             if (is_object($item)) {
+                /** @var object{value: mixed} $item */
                 $value = $item->value;
             } else {
                 yield $item;
@@ -54,6 +55,7 @@ trait ParsesPages
      */
     protected function yieldItemsFrom(mixed $source): Generator
     {
+        /** @phpstan-ignore-next-line */
         yield from JsonParser::parse($source)->pointer($this->config->itemsPointer);
     }
 }

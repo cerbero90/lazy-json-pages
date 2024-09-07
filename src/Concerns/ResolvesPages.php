@@ -27,13 +27,14 @@ trait ResolvesPages
             is_numeric($value) => (int) $value,
             !is_string($value) || $value === '' => null,
             !$this->isEndpoint($value) => $onlyNumerics ? null : $value,
-            default => $this->pageFromParsedUri(parse_url($value), $onlyNumerics),
+            default => $this->pageFromParsedUri(parse_url($value), $onlyNumerics), /** @phpstan-ignore-line */
         };
     }
 
     /**
      * Retrieve the page from the given parsed URI.
      *
+     * @param array{path?: string, query?: string} $parsedUri
      * @return ($onlyNumerics is true ? int|null : string|int|null)
      */
     protected function pageFromParsedUri(array $parsedUri, bool $onlyNumerics = true): string|int|null
@@ -55,7 +56,9 @@ trait ResolvesPages
     protected function uriForPage(UriInterface $uri, string $page): UriInterface
     {
         if ($key = $this->config->offsetKey) {
-            return Uri::withQueryValue($uri, $key, strval(($page - $this->config->firstPage) * $this->itemsPerPage));
+            $value = (intval($page) - $this->config->firstPage) * $this->itemsPerPage;
+
+            return Uri::withQueryValue($uri, $key, strval($value));
         }
 
         if (!$pattern = $this->config->pageInPath) {

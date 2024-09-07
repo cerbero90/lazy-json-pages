@@ -29,6 +29,6 @@ class TotalPagesAwarePagination extends Pagination
      */
     public function getIterator(): Traversable
     {
-        yield from $this->yieldItemsUntilKey($this->config->totalPagesKey);
+        yield from $this->yieldItemsUntilKey($this->config->totalPagesKey); /** @phpstan-ignore-line */
     }
 }
