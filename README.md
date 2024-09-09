@@ -17,11 +17,11 @@ use Illuminate\Support\LazyCollection;
 LazyCollection::fromJsonPages($source)
     ->totalPages('pagination.total_pages')
     ->async(requests: 5)
-    ->throttle(requests: 60, perMinute: 1)
+    ->throttle(requests: 100, perMinutes: 1)
     ->collect('data.*');
 ```
 
-Framework-agnostic package to load items from any paginated JSON API into a [Laravel lazy collection](https://laravel.com/docs/collections#lazy-collections) via async HTTP requests.
+Framework-agnostic API scraper to load items from any paginated JSON API into a [Laravel lazy collection](https://laravel.com/docs/collections#lazy-collections) via async HTTP requests.
 
 > [!TIP]
 > Need to read large JSON with no pagination in a memory-efficient way?
@@ -102,6 +102,9 @@ A source is any means that can point to a paginated JSON API. A number of source
 Here are some examples of sources:
 
 ```php
+// a simple URI string
+$source = 'https://example.com/api';
+
 // any PSR-7 compatible request is supported, including Guzzle requests
 $source = new GuzzleHttp\Psr7\Request('GET', 'https://example.com/api');
 
@@ -110,6 +113,8 @@ $source = Http::withToken($bearer)->get('https://example.com/api');
 ```
 
 If none of the above sources satifies our use case, we can implement our own source.
+
+<details><summary><b>Click here to see how to implement a custom source.</b></summary>
 
 To implement a custom source, we need to extend `Source` and implement 2 methods:
 
@@ -136,7 +141,7 @@ The parent class `Source` gives us access to 2 properties:
 - `$source`: the custom source for our use case
 - `$client`: the Guzzle HTTP client
 
-The methods to implement respectively turn our custom source into a PSR-7 request and a PSR-7 response. Please refer to the [already existing sources](https://github.com/cerbero90/json-parser/tree/master/src/Sources) to see some implementations.
+The methods to implement turn our custom source into a PSR-7 request and a PSR-7 response. Please refer to the [already existing sources](https://github.com/cerbero90/json-parser/tree/master/src/Sources) to see some implementations.
 
 Once the custom source is implemented, we can instruct Lazy JSON Pages to use it:
 
@@ -145,6 +150,7 @@ LazyJsonPages::from(new CustomSource($source));
 ```
 
 If you find yourself implementing the same custom source in different projects, feel free to send a PR and we will consider to support your custom source by default. Thank you in advance for any contribution!
+</details>
 
 
 ### 🏛️ Pagination structure
@@ -248,7 +254,7 @@ Some paginated API responses include a header called `Link`. An example is [GitH
 <https://api.github.com/repositories/1296269/issues?state=open&page=43>; rel="last"
 ```
 
-To lazy-load the items of a Link header pagination, we can chain the method `linkHeader()`:
+To lazy-load items from a Link header pagination, we can chain the method `linkHeader()`:
 
 ```php
 LazyJsonPages::from($source)->linkHeader();
@@ -258,6 +264,8 @@ LazyJsonPages::from($source)->linkHeader();
 ### 👽 Custom paginations
 
 Lazy JSON Pages provides several methods to extract items from the most popular pagination mechanisms. However if we need a custom solution, we can implement our own pagination.
+
+<details><summary><b>Click here to see how to implement a custom source.</b></summary>
 
 To implement a custom pagination, we need to extend `Pagination` and implement 1 method:
 
@@ -288,6 +296,7 @@ LazyJsonPages::from($source)->pagination(CustomPagination::class);
 ```
 
 If you find yourself implementing the same custom pagination in different projects, feel free to send a PR and we will consider to support your custom pagination by default. Thank you in advance for any contribution!
+</details>
 
 
 ### 🚀 Requests optimization
@@ -298,6 +307,19 @@ By default HTTP requests are sent synchronously. If we want to send more than on
 
 ```php
 LazyJsonPages::from($source)->async(requests: 5);
+```
+
+> [!NOTE]  
+> Please note that asynchronous requests improve speed at the expense of memory, as more responses are going to be loaded at once.
+
+Several APIs set rate limits to reduce the number of allowed requests for a period of time. We can instruct Lazy JSON Pages to respect such limits by throttling our requests:
+
+```php
+// we send a maximum of 3 requests per second, 60 per minute and 3,000 per hour
+LazyJsonPages::from($source)
+    ->throttle(requests: 3, perSeconds: 1)
+    ->throttle(requests: 60, perMinutes: 1)
+    ->throttle(requests: 3000, perHours: 1);
 ```
 
 Internally, Lazy JSON Pages uses [Guzzle](https://docs.guzzlephp.org) as its HTTP client. We can customize the client behavior by adding as many [middleware](https://docs.guzzlephp.org/en/stable/handlers-and-middleware.html#middleware) as we need:
@@ -314,32 +336,69 @@ If we need a middleware to be added every time we invoke Lazy JSON Pages, we can
 LazyJsonPages::globalMiddleware('fire_events', $fireEvents);
 ```
 
-Sometimes writing Guzzle middleware might be cumbersome. Alternatively Lazy JSON Pages provides convenient methods to fire callbacks when sending a request, receiving a response or dealing with a transaction error:
+Sometimes writing [Guzzle middleware](https://docs.guzzlephp.org/en/stable/handlers-and-middleware.html#middleware) might be cumbersome. Alternatively Lazy JSON Pages provides convenient methods to fire callbacks when sending a request or receiving a response:
 
 ```php
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 LazyJsonPages::from($source)
-    ->onRequest(fn(RequestInterface $request) => ...)
-    ->onResponse(fn(ResponseInterface $response, RequestInterface $request) => ...)
-    ->onError(fn(Throwable $e, RequestInterface $request, ?ResponseInterface $response) => ...);
+    ->onRequest(fn (RequestInterface $request) => ...)
+    ->onResponse(fn (ResponseInterface $response, RequestInterface $request) => ...);
 ```
 
-Several APIs set rate limits to limitate the number of allowed requests for a period of time. We can instruct Lazy JSON Pages to respect such limits by throttling our requests:
+We can also tweak the number of allowed seconds before an API connection times out or the allowed duration of the entire HTTP request (by default they are both set to 5 seconds):
 
 ```php
-// we send a maximum of 3 requests per second, 60 per minute and 3,000 per hour
 LazyJsonPages::from($source)
-    ->throttle(requests: 3, perSeconds: 1)
-    ->throttle(requests: 60, perMinutes: 1)
-    ->throttle(requests: 3000, perHours: 1);
+    ->connectionTimeout(7)
+    ->requestTimeout(10);
+```
+
+If the 3rd party API is faulty or error-prone, we can indicate how many times we want to retry failing HTTP requests and the backoff strategy to compute the milliseconds to wait before retrying (by default failing requests are repeated 3 times after an exponential backoff of 100, 400 and 900 milliseconds):
+
+```php
+// repeat failing requests 5 times after a backoff of 1, 2, 3, 4 and 5 seconds
+LazyJsonPages::from($source)
+    ->attempts(5)
+    ->backoff(fn (int $attempt) => $attempt * 1000);
 ```
 
 ### 💢 Errors handling
 
-> [!WARNING]
-> The documentation of this feature is a work in progress.
+If something goes wrong during the scraping process, we can intercept the error and execute a custom logic to handle it:
+
+```php
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+LazyJsonPages::from($source)
+    ->onError(fn (Throwable $e, RequestInterface $request, ?ResponseInterface $response) => ...);
+```
+
+Any exception thrown by this package extends the `LazyJsonPagesException` class. This makes it easy to handle all exceptions in a single catch block:
+
+```php
+use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
+
+try {
+    LazyJsonPages::from($source)->cursor('cursor')->collect()->each(fn () => ...);
+} catch (LazyJsonPagesException $e) {
+    // handle any exception thrown by Lazy JSON Pages
+}
+```
+
+For reference, here is a comprehensive table of all the exceptions thrown by this package:
+
+|`Cerbero\LazyJsonPages\Exceptions\`|thrown when|
+|---|---|
+|`InvalidKeyException`|a JSON key does not contain a valid value|
+|`InvalidPageInPathException`|a page cannot be found in the URI path|
+|`InvalidPaginationException`|a pagination implementation is not valid|
+|`OutOfAttemptsException`|an HTTP request failed too many times|
+|`RequestNotSentException`|a JSON source didn't send any HTTP request|
+|`UnsupportedPaginationException`|a pagination is not supported|
+|`UnsupportedSourceException`|a JSON source is not supported|
 
 
 ### 🤝 Laravel integration
