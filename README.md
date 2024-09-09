@@ -16,7 +16,7 @@ use Illuminate\Support\LazyCollection;
 
 LazyCollection::fromJsonPages($source)
     ->totalPages('pagination.total_pages')
-    ->async(requests: 5)
+    ->async(requests: 3)
     ->throttle(requests: 100, perMinutes: 1)
     ->collect('data.*');
 ```
@@ -54,7 +54,7 @@ composer require cerbero/lazy-json-pages
 
 ### 👣 Basics
 
-Depending on our coding style, we can initialize Lazy JSON Pages in 4 different ways:
+Depending on our coding style, we can instantiate Lazy JSON Pages in 4 different ways:
 
 ```php
 use Cerbero\LazyJsonPages\LazyJsonPages;
@@ -103,13 +103,13 @@ Here are some examples of sources:
 
 ```php
 // a simple URI string
-$source = 'https://example.com/api';
+$source = 'https://example.com/api/v1/users';
 
 // any PSR-7 compatible request is supported, including Guzzle requests
-$source = new GuzzleHttp\Psr7\Request('GET', 'https://example.com/api');
+$source = new GuzzleHttp\Psr7\Request('GET', 'https://example.com/api/v1/users');
 
 // while being framework-agnostic, Lazy JSON Pages integrates well with Laravel
-$source = Http::withToken($bearer)->get('https://example.com/api');
+$source = Http::withToken($bearer)->get('https://example.com/api/v1/users');
 ```
 
 If none of the above sources satifies our use case, we can implement our own source.
@@ -265,7 +265,7 @@ LazyJsonPages::from($source)->linkHeader();
 
 Lazy JSON Pages provides several methods to extract items from the most popular pagination mechanisms. However if we need a custom solution, we can implement our own pagination.
 
-<details><summary><b>Click here to see how to implement a custom source.</b></summary>
+<details><summary><b>Click here to see how to implement a custom pagination.</b></summary>
 
 To implement a custom pagination, we need to extend `Pagination` and implement 1 method:
 
@@ -382,7 +382,7 @@ Any exception thrown by this package extends the `LazyJsonPagesException` class.
 use Cerbero\LazyJsonPages\Exceptions\LazyJsonPagesException;
 
 try {
-    LazyJsonPages::from($source)->cursor('cursor')->collect()->each(fn () => ...);
+    LazyJsonPages::from($source)->linkHeader()->collect()->each(...);
 } catch (LazyJsonPagesException $e) {
     // handle any exception thrown by Lazy JSON Pages
 }
