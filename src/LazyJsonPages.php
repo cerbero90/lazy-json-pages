@@ -108,21 +108,21 @@ final class LazyJsonPages
     }
 
     /**
-     * Set the cursor or next page.
-     */
-    public function cursor(string $key): self
-    {
-        $this->config[Config::OPTION_CURSOR_KEY] = $key;
-
-        return $this;
-    }
-
-    /**
      * Set the number of the last page.
      */
     public function lastPage(string $key): self
     {
         $this->config[Config::OPTION_LAST_PAGE_KEY] = $key;
+
+        return $this;
+    }
+
+    /**
+     * Set the cursor or next page.
+     */
+    public function cursor(string $key): self
+    {
+        $this->config[Config::OPTION_CURSOR_KEY] = $key;
 
         return $this;
     }
