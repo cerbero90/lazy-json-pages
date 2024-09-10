@@ -1,88 +1,73 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\LazyJsonPages\Exceptions\OutOfAttemptsException;
-use Cerbero\LazyJsonPages\Outcome;
-use Throwable;
+use Closure;
+use Generator;
+use GuzzleHttp\Exception\TransferException;
+use Illuminate\Support\LazyCollection;
 
 /**
  * The trait to retry HTTP requests when they fail.
  *
+ * @property-read \Cerbero\LazyJsonPages\Data\Config $config
+ * @property-read \Cerbero\LazyJsonPages\Services\Book $book
  */
 trait RetriesHttpRequests
 {
     /**
-     * Retry to return the result of HTTP requests
+     * Retry to yield HTTP responses from the given callback.
      *
-     * @param callable $callback
-     * @return mixed
+     * @template TGen of Generator
+     * @param Closure(): TGen $callback
+     * @return TGen
      */
-    protected function retry(callable $callback)
+    protected function retry(Closure $callback): Generator
     {
         $attempt = 0;
-        $outcome = new Outcome();
-        $remainingAttempts = $this->config->attempts;
-
-        do {
-            $attempt++;
-            $remainingAttempts--;
-
-            try {
-                return $callback($outcome);
-            } catch (Throwable $e) {
-                if ($remainingAttempts > 0) {
-                    $this->backoff($attempt);
-                } else {
-                    throw new OutOfAttemptsException($e, $outcome);
-                }
-            }
-        } while ($remainingAttempts > 0);
-    }
-
-    /**
-     * Execute the backoff strategy
-     *
-     * @param int $attempt
-     * @return void
-     */
-    protected function backoff(int $attempt): void
-    {
-        $backoff = $this->config->backoff ?: function (int $attempt) {
-            return ($attempt - 1) ** 2 * 1000;
-        };
-
-        usleep($backoff($attempt) * 1000);
-    }
-
-    /**
-     * Retry to yield the result of HTTP requests
-     *
-     * @param callable $callback
-     * @return mixed
-     */
-    protected function retryYielding(callable $callback)
-    {
-        $attempt = 0;
-        $outcome = new Outcome();
         $remainingAttempts = $this->config->attempts;
 
         do {
             $failed = false;
-            $attempt++;
-            $remainingAttempts--;
+            ++$attempt;
+            --$remainingAttempts;
 
             try {
-                yield from $callback($outcome);
-            } catch (Throwable $e) {
+                yield from $callback();
+            } catch (TransferException $e) {
                 $failed = true;
 
                 if ($remainingAttempts > 0) {
                     $this->backoff($attempt);
                 } else {
-                    throw new OutOfAttemptsException($e, $outcome);
+                    $this->outOfAttempts($e);
                 }
             }
         } while ($failed && $remainingAttempts > 0);
+    }
+
+    /**
+     * Execute the backoff strategy.
+     */
+    protected function backoff(int $attempt): void
+    {
+        $backoff = $this->config->backoff ?: fn(int $attempt) => $attempt ** 2 * 100;
+
+        usleep($backoff($attempt) * 1000);
+    }
+
+    /**
+     * Throw the out of attempts exception.
+     */
+    protected function outOfAttempts(TransferException $e): never
+    {
+        throw new OutOfAttemptsException($e, $this->book->pullFailedPages(), new LazyCollection(function () {
+            foreach ($this->book->pullPages() as $page) {
+                yield from $this->yieldItemsFrom($page);
+            }
+        }));
     }
 }
