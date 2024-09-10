@@ -343,8 +343,8 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 LazyJsonPages::from($source)
-    ->onRequest(fn (RequestInterface $request) => ...)
-    ->onResponse(fn (ResponseInterface $response, RequestInterface $request) => ...);
+    ->onRequest(fn(RequestInterface $request) => ...)
+    ->onResponse(fn(ResponseInterface $response, RequestInterface $request) => ...);
 ```
 
 We can also tweak the number of allowed seconds before an API connection times out or the allowed duration of the entire HTTP request (by default they are both set to 5 seconds):
@@ -361,7 +361,7 @@ If the 3rd party API is faulty or error-prone, we can indicate how many times we
 // repeat failing requests 5 times after a backoff of 1, 2, 3, 4 and 5 seconds
 LazyJsonPages::from($source)
     ->attempts(5)
-    ->backoff(fn (int $attempt) => $attempt * 1000);
+    ->backoff(fn(int $attempt) => $attempt * 1000);
 ```
 
 ### 💢 Errors handling
@@ -373,7 +373,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 LazyJsonPages::from($source)
-    ->onError(fn (Throwable $e, RequestInterface $request, ?ResponseInterface $response) => ...);
+    ->onError(fn(Throwable $e, RequestInterface $request, ?ResponseInterface $response) => ...);
 ```
 
 Any exception thrown by this package extends the `LazyJsonPagesException` class. This makes it easy to handle all exceptions in a single catch block:
