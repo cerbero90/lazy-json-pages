@@ -48,6 +48,8 @@ abstract class Pagination implements IteratorAggregate
 
     /**
      * Determine whether this pagination matches the configuration.
+     *
+     * @codeCoverageIgnore
      */
     public function matches(): bool
     {

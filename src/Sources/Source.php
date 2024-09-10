@@ -39,6 +39,8 @@ abstract class Source
 
     /**
      * Determine whether this class can handle the source.
+     *
+     * @codeCoverageIgnore
      */
     public function matches(): bool
     {

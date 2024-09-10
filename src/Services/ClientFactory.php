@@ -43,6 +43,18 @@ final class ClientFactory
     private static array $globalMiddleware = [];
 
     /**
+     * Whether HTTP requests are faked.
+     */
+    private static bool $isFake = false;
+
+    /**
+     * The faked rate limits timestamps.
+     *
+     * @var float[]
+     */
+    public static array $fakedRateLimits = [];
+
+    /**
      * The tap middleware callbacks.
      */
     private readonly TapCallbacks $tapCallbacks;
@@ -84,6 +96,8 @@ final class ClientFactory
     {
         $transactions = [];
 
+        self::$isFake = true;
+
         $handler = HandlerStack::create(new MockHandler($responses));
 
         $handler->push(Middleware::history($transactions));
@@ -94,7 +108,19 @@ final class ClientFactory
 
         unset(self::$defaultConfig['handler']);
 
+        self::$fakedRateLimits = [];
+
+        self::$isFake = false;
+
         return $transactions;
+    }
+
+    /**
+     * Determine whether the HTTP requests are faked.
+     */
+    public static function isFake(): bool
+    {
+        return self::$isFake;
     }
 
     /**

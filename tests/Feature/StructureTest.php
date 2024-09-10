@@ -16,6 +16,19 @@ it('supports paginations with the current page in the URI path', function () {
     ]);
 });
 
+it('supports paginations with the current page in the URI path and last page as a URI', function () {
+    $lazyCollection = LazyJsonPages::from('https://example.com/api/v1/users/page/1')
+        ->pageInPath()
+        ->lastPage('meta.last_page_uri')
+        ->collect('data.*');
+
+    expect($lazyCollection)->toLoadItemsViaRequests([
+        'https://example.com/api/v1/users/page/1' => 'pagination/page1.json',
+        'https://example.com/api/v1/users/page/2' => 'pagination/page2.json',
+        'https://example.com/api/v1/users/page/3' => 'pagination/page3.json',
+    ]);
+});
+
 it('supports a custom pattern for paginations with the current page in the URI path', function () {
     $lazyCollection = LazyJsonPages::from('https://example.com/api/v1/users/page1')
         ->pageInPath('~/page(\d+)$~')
@@ -90,5 +103,18 @@ it('supports paginations with custom offset', function () {
         'https://example.com/api/v1/users' => 'pagination/page1.json',
         'https://example.com/api/v1/users?skip=5' => 'pagination/page2.json',
         'https://example.com/api/v1/users?skip=10' => 'pagination/page3.json',
+    ]);
+});
+
+it('supports paginations with custom page name', function () {
+    $lazyCollection = LazyJsonPages::from('https://example.com/api/v1/users')
+        ->pageName('current_page')
+        ->totalPages('meta.total_pages')
+        ->collect('data.*');
+
+    expect($lazyCollection)->toLoadItemsViaRequests([
+        'https://example.com/api/v1/users' => 'pagination/page1.json',
+        'https://example.com/api/v1/users?current_page=2' => 'pagination/page2.json',
+        'https://example.com/api/v1/users?current_page=3' => 'pagination/page3.json',
     ]);
 });

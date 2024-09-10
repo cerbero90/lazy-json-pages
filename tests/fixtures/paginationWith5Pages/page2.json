@@ -17,10 +17,10 @@
         }
     ],
     "meta": {
-        "total_pages": 3,
-        "total_items": 14,
-        "last_page": 3,
-        "last_page_uri": "https://example.com/api/v1/users/page/3",
+        "total_pages": 5,
+        "total_items": 24,
+        "last_page": 5,
+        "last_page_uri": "https://example.com/api/v1/users/page/5",
         "cursor": "cursor2",
         "cursor_uri": "https://example.com/api/v1/users/page/cursor2"
     }
