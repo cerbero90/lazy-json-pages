@@ -1,0 +1,2 @@
+providers:
+    - Cerbero\LazyJsonPages\Providers\LazyJsonPagesServiceProvider

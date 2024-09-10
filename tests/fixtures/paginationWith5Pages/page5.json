@@ -1,0 +1,24 @@
+{
+    "data": [
+        {
+            "name": "item21"
+        },
+        {
+            "name": "item22"
+        },
+        {
+            "name": "item23"
+        },
+        {
+            "name": "item24"
+        }
+    ],
+    "meta": {
+        "total_pages": 5,
+        "total_items": 24,
+        "last_page": 5,
+        "last_page_uri": "https://example.com/api/v1/users/page/5",
+        "cursor": null,
+        "cursor_uri": null
+    }
+}
