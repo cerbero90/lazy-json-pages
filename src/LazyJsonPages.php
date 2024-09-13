@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cerbero\LazyJsonPages;
 
-use Cerbero\LazyJson\Pointers\DotsConverter;
 use Cerbero\LazyJsonPages\Data\Config;
+use Cerbero\LazyJsonPages\Data\Dot;
 use Cerbero\LazyJsonPages\Paginations\AnyPagination;
 use Cerbero\LazyJsonPages\Services\ClientFactory;
 use Cerbero\LazyJsonPages\Sources\AnySource;
@@ -281,7 +281,7 @@ final class LazyJsonPages
      */
     public function collect(string $dot = '*'): LazyCollection
     {
-        $this->config[Config::OPTION_ITEMS_POINTER] = DotsConverter::toPointer($dot);
+        $this->config[Config::OPTION_ITEMS_POINTER] = (new Dot($dot))->toPointer();
 
         return new LazyCollection(function () {
             $client = $this->client->make();

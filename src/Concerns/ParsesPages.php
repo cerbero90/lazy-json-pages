@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cerbero\LazyJsonPages\Concerns;
 
 use Cerbero\JsonParser\JsonParser;
-use Cerbero\LazyJson\Pointers\DotsConverter;
+use Cerbero\LazyJsonPages\Data\Dot;
 use Generator;
 use Psr\Http\Message\ResponseInterface;
 
@@ -30,7 +30,7 @@ trait ParsesPages
         $pointers = [$this->config->itemsPointer];
 
         if (($value = $response->getHeaderLine($key)) === '') {
-            $pointers[DotsConverter::toPointer($key)] = fn(mixed $value) => (object) compact('value');
+            $pointers[(new Dot($key))->toPointer()] = fn(mixed $value) => (object) compact('value');
         }
 
         foreach (JsonParser::parse($response)->pointers($pointers) as $item) {
